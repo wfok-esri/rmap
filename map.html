@@ -10,7 +10,7 @@
 <body>
 <div id="viewDiv" style="height: 100vh;"></div>
 <script>
-       require(["esri/Map", "esri/views/MapView"], function(Map, MapView) {
+       require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer"], function(Map, MapView, FeatureLayer) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",
@@ -18,6 +18,10 @@
                center: [-118.805, 34.027], // Longitude, latitude
                zoom: 13
            });
+           const trailLayer = new FeatureLayer({
+                  url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer" //YOUR_HIKING_TRAIL_FEATURE_SERVICE_URL
+           });
+           map.add(trailLayer);
        });
 </script>
 </body>

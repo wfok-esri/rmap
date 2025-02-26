@@ -30,19 +30,25 @@
            "esri/geometry/Polyline",
            "esri/Graphic",
            "esri/geometry/geometryEngine",
-           "dojo/dom-construct",
-           "dojo/on"
-       ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, domConstruct, on) {
+           "esri/identity/IdentityManager"
+       ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, IdentityManager) {
+           // Register credentials for the secured feature layer
+           IdentityManager.registerCredentials({
+               server: "https://rmaplite-map-uat.hkphub.com/arcgis_server",
+               username: "portaladmin",
+               password: "gis12345"
+           });
            // Custom Widget Definition
            const DrawAlongLineWidget = Widget.createSubclass({
                properties: {
                    view: {}
                },
                render: function () {
-                   return domConstruct.create("div", {
-                       innerHTML: "Draw Along Line Widget",
-                       className: "draw-along-line-widget"
-                   });
+                   // Create a simple div for the widget UI
+                   const div = document.createElement("div");
+                   div.innerHTML = "Draw Along Line Widget";
+                   div.className = "draw-along-line-widget";
+                   return div;
                },
                postCreate: function () {
                    this._setupDrawing();
@@ -124,17 +130,12 @@
            const view = new MapView({
                container: "viewDiv",
                map: map,
-               center: [-118.805, 34.027], // Replace with your center coordinates
+               center: [114.1694, 22.3193], // Centered on Hong Kong
                zoom: 13
            });
            // Add the trails layer to the map
            const trailsLayer = new FeatureLayer({
-               url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0", // Replace with your feature service URL
-               // Include authentication credentials
-               authenticationInfo: {
-                  username: "portaladmin",
-                  password: "gis12345"
-               },
+               url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0",
                outFields: ["*"]
            });
            map.add(trailsLayer);

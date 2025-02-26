@@ -10,7 +10,8 @@
 <body>
 <div id="viewDiv" style="height: 100vh;"></div>
 <script>
-       require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/Sketch", "esri/Graphic", "esri/geometry/Polyline"], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, geometryEngine) {
+       require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer",
+   "esri/widgets/Sketch", "esri/geometry/Polyline", "esri/Graphic", "esri/geometry/geometryEngine"], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, geometryEngine) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",

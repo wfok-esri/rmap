@@ -33,7 +33,7 @@
            "esri/identity/IdentityManager"
        ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, IdentityManager) {
            // Register credentials for the secured feature layer
-           IdentityManager.registerCredentials({
+           IdentityManager.getCredential({
                server: "https://rmaplite-map-uat.hkphub.com/arcgis_server",
                username: "portaladmin",
                password: "gis12345"

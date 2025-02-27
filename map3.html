@@ -6,288 +6,160 @@
 <title>Draw Along Line Widget</title>
 <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
 <style>
-
-        html, body, #viewDiv {
-
-            padding: 0;
-
-            margin: 0;
-
-            height: 100%;
-
-            width: 100%;
-
-        }
-
-        .draw-along-line-widget {
-
-            background: white;
-
-            padding: 10px;
-
-            border: 1px solid #ccc;
-
-            border-radius: 5px;
-
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-        }
+       html, body, #viewDiv {
+           padding: 0;
+           margin: 0;
+           height: 100%;
+           width: 100%;
+       }
+       .draw-along-line-widget {
+           background: white;
+           padding: 10px;
+           border: 1px solid #ccc;
+           border-radius: 5px;
+           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+       }
 </style>
 <script src="https://js.arcgis.com/4.26/"></script>
 <script>
-
-        require([
-
-            "esri/Map",
-
-            "esri/views/MapView",
-
-            "esri/layers/FeatureLayer",
-
-            "esri/widgets/Widget",
-
-            "esri/geometry/Polyline",
-
-            "esri/Graphic",
-
-            "esri/geometry/geometryEngine",
-
-            "esri/identity/IdentityManager"
-
-        ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, IdentityManager) {
-
-            // Register credentials for the secured feature layer
-
-            IdentityManager.registerCredentials({
-
-                server: "https://rmaplite-map-uat.hkphub.com/arcgis_server",
-
-                username: "portaladmin",
-
-                password: "gis12345"
-
-            });
-
-            // Custom Widget Definition
-
-            const DrawAlongLineWidget = Widget.createSubclass({
-
-                properties: {
-
-                    view: {}
-
-                },
-
-                render: function () {
-
-                    // Create a simple div for the widget UI
-
-                    const div = document.createElement("div");
-
-                    div.innerHTML = "Draw Along Line Widget";
-
-                    div.className = "draw-along-line-widget";
-
-                    return div;
-
-                },
-
-                postCreate: function () {
-
-                    this._setupDrawing();
-
-                },
-
-                _setupDrawing: function () {
-
-                    const view = this.view;
-
-                    let isDrawing = false;
-
-                    let startPoint = null;
-
-                    let endPoint = null;
-
-                    // Listen for mouse down event
-
-                    view.on("pointer-down", (event) => {
-
-                        isDrawing = true;
-
-                        startPoint = view.toMap({ x: event.x, y: event.y });
-
-                    });
-
-                    // Listen for mouse move event
-
-                    view.on("pointer-move", (event) => {
-
-                        if (isDrawing) {
-
-                            endPoint = view.toMap({ x: event.x, y: event.y });
-
-                            // Snap to the nearest trail segment
-
-                            const nearestTrailSegment = geometryEngine.nearest(trailsLayer, endPoint, 1);
-
-                            if (nearestTrailSegment) {
-
-                                endPoint = nearestTrailSegment.geometry;
-
-                            }
-
-                            // Create a polyline between start and end points
-
-                            const polyline = new Polyline({
-
-                                paths: [[[startPoint.x, startPoint.y], [endPoint.x, endPoint.y]]],
-
-                                spatialReference: view.spatialReference
-
-                            });
-
-                            // Clear previous graphics
-
-                            view.graphics.removeAll();
-
-                            // Add the new line graphic
-
-                            const lineGraphic = new Graphic({
-
-                                geometry: polyline,
-
-                                symbol: {
-
-                                    type: "simple-line",
-
-                                    color: "blue",
-
-                                    width: 2
-
-                                }
-
-                            });
-
-                            view.graphics.add(lineGraphic);
-
-                        }
-
-                    });
-
-                    // Listen for mouse up event
-
-                    view.on("pointer-up", () => {
-
-                        isDrawing = false;
-
-                    });
-
-                    // Listen for click event to select start/end points
-
-                    view.on("click", (event) => {
-
-                        const clickedPoint = view.toMap({ x: event.x, y: event.y });
-
-                        if (!startPoint) {
-
-                            startPoint = clickedPoint;
-
-                        } else {
-
-                            endPoint = clickedPoint;
-
-                            // Draw the line segment
-
-                            const polyline = new Polyline({
-
-                                paths: [[[startPoint.x, startPoint.y], [endPoint.x, endPoint.y]]],
-
-                                spatialReference: view.spatialReference
-
-                            });
-
-                            const lineGraphic = new Graphic({
-
-                                geometry: polyline,
-
-                                symbol: {
-
-                                    type: "simple-line",
-
-                                    color: "red",
-
-                                    width: 2
-
-                                }
-
-                            });
-
-                            view.graphics.add(lineGraphic);
-
-                            // Reset points
-
-                            startPoint = null;
-
-                            endPoint = null;
-
-                        }
-
-                    });
-
-                }
-
-            });
-
-            // Initialize the map and view
-
-            const map = new Map({
-
-                basemap: "topo-vector"
-
-            });
-
-            const view = new MapView({
-
-                container: "viewDiv",
-
-                map: map,
-
-                center: [114.1694, 22.3193], // Centered on Hong Kong
-
-                zoom: 13
-
-            });
-
-            // Add the trails layer to the map
-
-            const trailsLayer = new FeatureLayer({
-
-                url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0",
-
-                outFields: ["*"]
-
-            });
-
-            map.add(trailsLayer);
-
-            // Add the custom widget to the view
-
-            view.when(() => {
-
-                const drawAlongLineWidget = new DrawAlongLineWidget({
-
-                    view: view
-
-                });
-
-                view.ui.add(drawAlongLineWidget, "top-right");
-
-            });
-
-        });
+       require([
+           "esri/Map",
+           "esri/views/MapView",
+           "esri/layers/FeatureLayer",
+           "esri/widgets/Widget",
+           "esri/geometry/Polyline",
+           "esri/Graphic",
+           "esri/geometry/geometryEngine",
+           "esri/identity/OAuthInfo",
+           "esri/identity/IdentityManager"
+       ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, OAuthInfo, IdentityManager) {
+           // Set up OAuth2 info
+           const oauthInfo = new OAuthInfo({
+               appId: "YOUR_CLIENT_ID", // Replace with your client ID
+               portalUrl: "https://rmaplite-map-uat.hkphub.com/arcgis_server" // Replace with your portal URL
+           });
+           // Register the OAuth2 info
+           IdentityManager.registerOAuthInfos([oauthInfo]);
+           // Check if the user is already signed in
+           IdentityManager.checkSignInStatus(oauthInfo.portalUrl + "/sharing")
+               .then(() => {
+                   console.log("User is signed in.");
+               })
+               .catch(() => {
+                   // Redirect the user to the sign-in page
+                   IdentityManager.getCredential(oauthInfo.portalUrl + "/sharing");
+               });
+           // Custom Widget Definition
+           const DrawAlongLineWidget = Widget.createSubclass({
+               properties: {
+                   view: {}
+               },
+               render: function () {
+                   const div = document.createElement("div");
+                   div.innerHTML = "Draw Along Line Widget";
+                   div.className = "draw-along-line-widget";
+                   return div;
+               },
+               postCreate: function () {
+                   this._setupDrawing();
+               },
+               _setupDrawing: function () {
+                   const view = this.view;
+                   let isDrawing = false;
+                   let startPoint = null;
+                   let endPoint = null;
+                   // Listen for mouse down event
+                   view.on("pointer-down", (event) => {
+                       isDrawing = true;
+                       startPoint = view.toMap({ x: event.x, y: event.y });
+                   });
+                   // Listen for mouse move event
+                   view.on("pointer-move", (event) => {
+                       if (isDrawing) {
+                           endPoint = view.toMap({ x: event.x, y: event.y });
+                           // Snap to the nearest trail segment
+                           const nearestTrailSegment = geometryEngine.nearest(trailsLayer, endPoint, 1);
+                           if (nearestTrailSegment) {
+                               endPoint = nearestTrailSegment.geometry;
+                           }
+                           // Create a polyline between start and end points
+                           const polyline = new Polyline({
+                               paths: [[[startPoint.x, startPoint.y], [endPoint.x, endPoint.y]]],
+                               spatialReference: view.spatialReference
+                           });
+                           // Clear previous graphics
+                           view.graphics.removeAll();
+                           // Add the new line graphic
+                           const lineGraphic = new Graphic({
+                               geometry: polyline,
+                               symbol: {
+                                   type: "simple-line",
+                                   color: "blue",
+                                   width: 2
+                               }
+                           });
+                           view.graphics.add(lineGraphic);
+                       }
+                   });
+                   // Listen for mouse up event
+                   view.on("pointer-up", () => {
+                       isDrawing = false;
+                   });
+                   // Listen for click event to select start/end points
+                   view.on("click", (event) => {
+                       const clickedPoint = view.toMap({ x: event.x, y: event.y });
+                       if (!startPoint) {
+                           startPoint = clickedPoint;
+                       } else {
+                           endPoint = clickedPoint;
+                           // Draw the line segment
+                           const polyline = new Polyline({
+                               paths: [[[startPoint.x, startPoint.y], [endPoint.x, endPoint.y]]],
+                               spatialReference: view.spatialReference
+                           });
+                           const lineGraphic = new Graphic({
+                               geometry: polyline,
+                               symbol: {
+                                   type: "simple-line",
+                                   color: "red",
+                                   width: 2
+                               }
+                           });
+                           view.graphics.add(lineGraphic);
+                           // Reset points
+                           startPoint = null;
+                           endPoint = null;
+                       }
+                   });
+               }
+           });
+           // Initialize the map and view
+           const map = new Map({
+               basemap: "topo-vector"
+           });
+           const view = new MapView({
+               container: "viewDiv",
+               map: map,
+               center: [114.1694, 22.3193], // Centered on Hong Kong
+               zoom: 13
+           });
+           // Add the trails layer to the map
+           const trailsLayer = new FeatureLayer({
+               url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0",
+               outFields: ["*"]
+           });
+           map.add(trailsLayer);
+           // Add the custom widget to the view
+           view.when(() => {
+               const drawAlongLineWidget = new DrawAlongLineWidget({
+                   view: view
+               });
+               view.ui.add(drawAlongLineWidget, "top-right");
+           });
+       });
 </script>
 </head>
 <body>
 <div id="viewDiv"></div>
 </body>
-</html> 
+</html>

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ArcGIS API Example</title>
-<link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css">
-<script src="https://js.arcgis.com/4.21/"></script>
+<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+<script src="https://js.arcgis.com/4.31/"></script>
 </head>
 <body>
 <div id="viewDiv" style="height: 100vh;"></div>
@@ -15,11 +15,10 @@
            "esri/views/MapView",
            "esri/layers/FeatureLayer",
            "esri/widgets/Sketch",
-           "esri/Graphic",
-           "esri/geometry/geometryEngine",
            "esri/geometry/Polyline",
-           "esri/geometry/Point"
-       ], function(Map, MapView, FeatureLayer, Sketch, Graphic, geometryEngine, Polyline, Point) {
+           "esri/Graphic",
+           "esri/geometry/geometryEngine"
+       ], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, geometryEngine) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",
@@ -41,67 +40,23 @@
                creationMode: "update" // Allows to draw on existing features
            });
            view.ui.add(sketch, "top-right");
-           let currentLine = null; // To hold the graphic being drawn
+           // Functionality to handle mouse events
+           view.on("click", function(event) {
+               // Logic to start drawing on existing line segment
+               // Use geometryEngine to find the nearest line segment
+           });
            // Handle mouse down to start drawing
            view.on("mousedown", function(event) {
-               // Create a new polyline graphic
-               currentLine = new Graphic({
-                   geometry: new Polyline({
-                       paths: [[event.mapPoint.x, event.mapPoint.y]]
-                   }),
-                   symbol: {
-                       type: "simple-line",
-                       color: [255, 0, 0],
-                       width: 2
-                   }
-               });
-               view.graphics.add(currentLine);
+               // Capture the starting point and begin to draw
            });
            // Handle mouse move to draw line
            view.on("mousemove", function(event) {
-               if (currentLine) {
-                   // Find the nearest line segment
-                   const nearestSegment = findNearestSegment(event.mapPoint);
-                   if (nearestSegment) {
-                       // Update the line being drawn to snap
-                       currentLine.geometry.addPath([event.mapPoint.x, event.mapPoint.y]);
-                       currentLine.geometry.addPath(nearestSegment);
-                   } else {
-                       // Just draw normally if no segment is found
-                       currentLine.geometry.addPath([event.mapPoint.x, event.mapPoint.y]);
-                   }
-               }
+               // Update the graphic as the mouse moves
            });
            // Handle mouse up to finish drawing
            view.on("mouseup", function(event) {
-               if (currentLine) {
-                   // Finalize the drawing
-                   currentLine = null;
-               }
+               // Finalize the drawing and add to the layer
            });
-           function findNearestSegment(point) {
-               let nearestSegment = null;
-               let minDistance = Infinity;
-               // Query the trail layer for features
-               trailLayer.queryFeatures().then(function(results) {
-                   results.features.forEach(function(feature) {
-                       // Calculate distance to each segment
-                       const paths = feature.geometry.paths;
-                       paths.forEach(function(path) {
-                           for (let i = 0; i < path.length - 1; i++) {
-                               const segmentStart = new Point(path[i]);
-                               const segmentEnd = new Point(path[i + 1]);
-                               const distance = geometryEngine.distance(point, geometryEngine.closestPoint(segmentStart, segmentEnd, point));
-                               if (distance < minDistance) {
-                                   minDistance = distance;
-                                   nearestSegment = [segmentStart, segmentEnd];
-                               }
-                           }
-                       });
-                   });
-               });
-               return nearestSegment;
-           }
        });
 </script>
 </body>

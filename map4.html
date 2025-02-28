@@ -10,69 +10,92 @@
 <body>
 <div id="viewDiv" style="height: 100vh;"></div>
 <script>
-require([
-   "esri/Map",
-   "esri/views/MapView",
-   "esri/layers/FeatureLayer",
-   "esri/widgets/Sketch",
-   "esri/geometry/Polyline",
-   "esri/Graphic",
-   "esri/geometry/geometryEngine",
-   "esri/views/2d/draw/Draw",
-   "esri/views/2d/interactive/snapping/SnappingOptions",
-   "esri/views/2d/interactive/snapping/SnappingControls"
-], function (
-   Map, MapView, FeatureLayer, Sketch, Polyline, Graphic, geometryEngine, Draw, SnappingOptions, SnappingControls
-) {
-   const map = new Map({ basemap: "streets-navigation-vector" });
-   const view = new MapView({
-       container: "viewDiv",
-       map: map,
-       center: [114.109, 22.396], // Longitude, latitude
-       zoom: 10
-   });
-   const trailLayer = new FeatureLayer({
-       url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0",
-       authenticationInfo: {
-           username: "portaladmin",
-           password: "gis12345"
-       }
-   });
-   map.add(trailLayer);
-   const sketch = new Sketch({
-       view: view,
-       layer: trailLayer,
-       creationMode: "update" // Allows drawing on existing features
-   });
-   view.ui.add(sketch, "top-right");
-   // Configure snapping options
-   const snappingOptions = new SnappingOptions({
-       enabled: true, // Enable snapping
-       selfEnabled: true, // Snap to the sketch itself
-       featureEnabled: true, // Snap to features
-       featureSources: [{ layer: trailLayer }] // Specify the layer to snap to
-   });
-   // Apply snapping options to the view
-   const snappingControls = new SnappingControls({
-       view: view,
-       snappingOptions: snappingOptions
-   });
-   // Enable snapping for the sketch widget
-   sketch.viewModel.snappingOptions = snappingOptions;
-   // Handle mouse events (optional, for custom drawing logic)
-   view.on("click", function (event) {
-       // Logic to start drawing on existing line segment
-   });
-   view.on("mousedown", function (event) {
-       // Capture the starting point and begin to draw
-   });
-   view.on("mousemove", function (event) {
-       // Update the graphic as the mouse moves
-   });
-   view.on("mouseup", function (event) {
-       // Finalize the drawing and add to the layer
-   });
-});
+       require([
+           "esri/Map",
+           "esri/views/MapView",
+           "esri/layers/FeatureLayer",
+           "esri/Graphic",
+           "esri/geometry/geometryEngine",
+           "esri/geometry/Polyline",
+           "esri/geometry/Point",
+           "esri/core/watchUtils"
+       ], function(Map, MapView, FeatureLayer, Graphic, geometryEngine, Polyline, Point, watchUtils) {
+           const map = new Map({ basemap: "streets-navigation-vector" });
+           const view = new MapView({
+               container: "viewDiv",
+               map: map,
+               center: [114.109, 22.396], // Longitude, latitude
+               zoom: 10
+           });
+           const trailLayer = new FeatureLayer({
+               url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0",
+               authenticationInfo: {
+                   username: "portaladmin",
+                   password: "gis12345"
+               }
+           });
+           map.add(trailLayer);
+           let currentLine = null; // To hold the graphic being drawn
+           let isDrawing = false; // Track drawing state
+           // Start drawing on mouse down
+           view.on("mousedown", function(event) {
+               if (!isDrawing) {
+                   isDrawing = true;
+                   currentLine = new Graphic({
+                       geometry: new Polyline({
+                           paths: [[event.mapPoint.x, event.mapPoint.y]]
+                       }),
+                       symbol: {
+                           type: "simple-line",
+                           color: [255, 0, 0],
+                           width: 2
+                       }
+                   });
+                   view.graphics.add(currentLine);
+               }
+           });
+           // Update line geometry on mouse move
+           view.on("mousemove", function(event) {
+               if (isDrawing && currentLine) {
+                   const nearestSegment = findNearestSegment(event.mapPoint);
+                   if (nearestSegment) {
+                       currentLine.geometry.paths[0].push(nearestSegment);
+                   } else {
+                       currentLine.geometry.paths[0].push([event.mapPoint.x, event.mapPoint.y]);
+                   }
+                   currentLine.geometry = currentLine.geometry.clone(); // Refresh the graphic
+               }
+           });
+           // Finish drawing on mouse up
+           view.on("mouseup", function(event) {
+               if (isDrawing) {
+                   isDrawing = false;
+                   currentLine = null; // Reset the current line
+               }
+           });
+           function findNearestSegment(point) {
+               let nearestSegment = null;
+               let minDistance = 10; // Change this threshold as needed
+               // Query the trail layer for features
+               trailLayer.queryFeatures().then(function(results) {
+                   results.features.forEach(function(feature) {
+                       const paths = feature.geometry.paths;
+                       paths.forEach(function(path) {
+                           for (let i = 0; i < path.length - 1; i++) {
+                               const segmentStart = new Point(path[i]);
+                               const segmentEnd = new Point(path[i + 1]);
+                               const distance = geometryEngine.distance(point, geometryEngine.nearestCoordinate(segmentStart, segmentEnd, point));
+                               if (distance < minDistance) {
+                                   minDistance = distance;
+                                   nearestSegment = [segmentStart.x, segmentStart.y]; // Snap to the start of the segment
+                               }
+                           }
+                       });
+                   });
+               });
+               return nearestSegment;
+           }
+       });
 </script>
 </body>
 </html>

@@ -18,8 +18,8 @@
            "esri/geometry/geometryEngine",
            "esri/geometry/Polyline",
            "esri/geometry/Point",
-           "esri/core/watchUtils"
-       ], function(Map, MapView, FeatureLayer, Graphic, geometryEngine, Polyline, Point, watchUtils) {
+           "esri/core/reactiveUtils"
+       ], function(Map, MapView, FeatureLayer, Graphic, geometryEngine, Polyline, Point, reactiveUtils) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",

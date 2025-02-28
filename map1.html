@@ -1,63 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ArcGIS API Example</title>
-<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
-<script src="https://js.arcgis.com/4.31/"></script>
-</head>
-<body>
-<div id="viewDiv" style="height: 100vh;"></div>
-<script>
-       require([
-           "esri/Map",
-           "esri/views/MapView",
-           "esri/layers/FeatureLayer",
-           "esri/widgets/Sketch",
-           "esri/geometry/Polyline",
-           "esri/Graphic",
-           "esri/geometry/geometryEngine"
-       ], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, geometryEngine) {
-           const map = new Map({ basemap: "streets-navigation-vector" });
-           const view = new MapView({
-               container: "viewDiv",
-               map: map,
-               center: [114.109, 22.396], // Longitude, latitude
-               zoom: 10
-           });
-           const trailLayer = new FeatureLayer({
-               url: "https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0",
-               authenticationInfo: {
-                   username: "portaladmin",
-                   password: "gis12345"
-               }
-           });
-           map.add(trailLayer);
-           const sketch = new Sketch({
-               view: view,
-               layer: trailLayer,
-               creationMode: "update" // Allows to draw on existing features
-           });
-           view.ui.add(sketch, "top-right");
-           // Functionality to handle mouse events
-           view.on("click", function(event) {
-               // Logic to start drawing on existing line segment
-               // Use geometryEngine to find the nearest line segment
-           });
-           // Handle mouse down to start drawing
-           view.on("mousedown", function(event) {
-               // Capture the starting point and begin to draw
-           });
-           // Handle mouse move to draw line
-           view.on("mousemove", function(event) {
-               // Update the graphic as the mouse moves
-           });
-           // Handle mouse up to finish drawing
-           view.on("mouseup", function(event) {
-               // Finalize the drawing and add to the layer
-           });
-       });
-</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Custom Widget 1</title>
+
+    <!-- Load Calcite components from CDN -->
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+
+    <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.31/"></script>
+
+    <!-- Load Map components from CDN-->
+    <script
+      type="module"
+      src="https://js.arcgis.com/map-components/4.31/arcgis-map-components.esm.js"
+    ></script>
+
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <arcgis-map basemap="topo-vector" center="114.109,22.396" zoom="10">
+      <arcgis-sketch position="top-right" creation-mode="update"> </arcgis-sketch>
+    </arcgis-map>
+    <arcgis-feature-layer
+           url="https://rmaplite-map-uat.hkphub.com/arcgis_server/rest/services/Hosted/HikingTrailsinCountryParks_fortest_wfok/FeatureServer/0"
+           authentication-info='{"username": "portaladmin", "password": "gis12345"}'
+></arcgis-feature-layer>
+  </body>
 </html>

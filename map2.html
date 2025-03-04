@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ArcGIS API Example</title>
-<link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css">
-<script src="https://js.arcgis.com/4.21/"></script>
+<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+<script src="https://js.arcgis.com/4.31/"></script>
 </head>
 <body>
 <div id="viewDiv" style="height: 100vh;"></div>
 <script>
        require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer",
-   "esri/widgets/Sketch", "esri/geometry/Polyline", "esri/Graphic", "esri/geometry/geometryEngine"], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, geometryEngine) {
+   "esri/widgets/Sketch", "esri/geometry/Polyline", "esri/Graphic"], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",

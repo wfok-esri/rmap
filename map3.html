@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Draw Along Line Widget</title>
-<link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
+<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
 <style>
        html, body, #viewDiv {
            padding: 0;
@@ -30,9 +30,10 @@
            "esri/geometry/Polyline",
            "esri/Graphic",
            "esri/geometry/geometryEngine",
+           "esri/geometry/operators/proximityOperator",   
            "esri/identity/OAuthInfo",
            "esri/identity/IdentityManager"
-       ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, OAuthInfo, IdentityManager) {
+       ], function (Map, MapView, FeatureLayer, Widget, Polyline, Graphic, geometryEngine, proximityOperator, OAuthInfo, IdentityManager) {
            // Set up OAuth2 info
            const oauthInfo = new OAuthInfo({
                appId: "z40PAkOap6zX7MHh", // Replace with your client ID
@@ -78,7 +79,8 @@
                        if (isDrawing) {
                            endPoint = view.toMap({ x: event.x, y: event.y });
                            // Snap to the nearest trail segment
-                           const nearestTrailSegment = geometryEngine.nearest(trailsLayer, endPoint, 1);
+                           const nearestTrailSegment = proximityOperator.getNearestCoordinate(trailsLayer, endPoint, 1); 
+                           // const nearestTrailSegment = geometryEngine.nearest(trailsLayer, endPoint, 1);
                            if (nearestTrailSegment) {
                                endPoint = nearestTrailSegment.geometry;
                            }

@@ -16,10 +16,12 @@
            "esri/layers/FeatureLayer",
            "esri/Graphic",
            "esri/geometry/geometryEngine",
+           "esri/geometry/operators/distanceOperator",
+           "esri/geometry/operators/proximityOperator",
            "esri/geometry/Polyline",
            "esri/geometry/Point",
            "esri/core/reactiveUtils"
-       ], function(Map, MapView, FeatureLayer, Graphic, geometryEngine, Polyline, Point, reactiveUtils) {
+       ], function(Map, MapView, FeatureLayer, Graphic, geometryEngine, distanceOperator, proximityOperator, Polyline, Point, reactiveUtils) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",
@@ -84,7 +86,8 @@
                            for (let i = 0; i < path.length - 1; i++) {
                                const segmentStart = new Point(path[i]);
                                const segmentEnd = new Point(path[i + 1]);
-                               const distance = geometryEngine.distance(point, geometryEngine.nearestCoordinate(segmentStart, segmentEnd, point));
+                               const distance = distanceOperator.execute(point, proximityOperator.nearestCoordinate(segmentStart, segmentEnd, point));
+                               // const distance = geometryEngine.distance(point, geometryEngine.nearestCoordinate(segmentStart, segmentEnd, point));
                                if (distance < minDistance) {
                                    minDistance = distance;
                                    nearestSegment = [segmentStart.x, segmentStart.y]; // Snap to the start of the segment

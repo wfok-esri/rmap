@@ -147,9 +147,9 @@
 
                                     const segmentEnd = new Point(path[i + 1]);
 
-                                    const distanceToStart = distanceOperator.calculate(start, segmentStart);
+                                    const distanceToStart = distanceOperator.execute(start, segmentStart);
 
-                                    const distanceToEnd = distanceOperator.calculate(end, segmentEnd);
+                                    const distanceToEnd = distanceOperator.execute(end, segmentEnd);
 
                                     if (distanceToStart < minDistance && distanceToEnd < minDistance) {
 

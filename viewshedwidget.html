@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom Viewshed Widget</title>
+<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+<script src="https://js.arcgis.com/4.31/"></script>
+<style>
+       #viewDiv {
+           height: 100vh;
+       }
+       .widget {
+           position: absolute;
+           top: 10px;
+           left: 10px;
+           background: white;
+           padding: 10px;
+           border-radius: 5px;
+           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+           z-index: 99;
+       }
+       .viewshed-item {
+           margin-bottom: 5px;
+       }
+</style>
+</head>
+<body>
+<div id="viewDiv"></div>
+<div class="widget">
+<h3>Viewshed Widget</h3>
+<div>
+<label>Latitude: <input type="number" id="lat" /></label><br>
+<label>Longitude: <input type="number" id="long" /></label><br>
+<label>Height: <input type="number" id="height" /></label><br>
+<label>View Angle: <input type="number" id="angle" /></label><br>
+<label>Distance: <input type="number" id="distance" /></label><br>
+<button id="addViewshed">Add Viewshed</button>
+<button id="exportViewsheds">Export Viewsheds</button>
+<button id="importViewsheds">Import Viewsheds</button>
+<textarea id="importArea" placeholder="Paste JSON here" rows="5" style="width: 100%; display: none;"></textarea>
+</div>
+<div id="viewshedList"></div>
+</div>
+<script>
+       require([
+           "esri/Map",
+           "esri/views/SceneView",
+           "esri/analysis/Viewshed",
+           "esri/geometry/Point",
+           "esri/Graphic",
+           "esri/widgets/Sketch"
+       ], function(Map, SceneView, Viewshed, Point, Graphic, Sketch) {
+           const map = new Map({ basemap: "streets-navigation-vector" });
+           const view = new SceneView({
+               container: "viewDiv",
+               map: map,
+               center: [114.109, 22.396], // Longitude, latitude
+               zoom: 10
+           });
+           const viewsheds = [];
+           document.getElementById("addViewshed").onclick = function() {
+               const lat = parseFloat(document.getElementById("lat").value);
+               const long = parseFloat(document.getElementById("long").value);
+               const height = parseFloat(document.getElementById("height").value);
+               const angle = parseFloat(document.getElementById("angle").value);
+               const distance = parseFloat(document.getElementById("distance").value);
+               const point = new Point({
+                   longitude: long,
+                   latitude: lat,
+                   z: height
+               });
+               const viewshed = new Viewshed({
+                   observerLocation: point,
+                   visibleArea: {
+                       distance: distance,
+                       azimuth: angle
+                   }
+               });
+               const graphic = new Graphic({
+                   geometry: point,
+                   symbol: {
+                       type: "simple-marker",
+                       color: "red",
+                       size: "10px"
+                   }
+               });
+               view.graphics.add(graphic);
+               viewsheds.push(viewshed);
+               updateViewshedList();
+               clearInputs();
+           };
+           function updateViewshedList() {
+               const list = document.getElementById("viewshedList");
+               list.innerHTML = "";
+               viewsheds.forEach((vs, index) => {
+                   const item = document.createElement("div");
+                   item.className = "viewshed-item";
+                   item.innerHTML = `Viewshed ${index + 1} <button onclick="removeViewshed(${index})">Remove</button>`;
+                   list.appendChild(item);
+               });
+           }
+           window.removeViewshed = function(index) {
+               viewsheds.splice(index, 1);
+               updateViewshedList();
+           };
+           document.getElementById("exportViewsheds").onclick = function() {
+               const exported = JSON.stringify(viewsheds.map(vs => ({
+                   lat: vs.observerLocation.latitude,
+                   long: vs.observerLocation.longitude,
+                   height: vs.observerLocation.z,
+                   angle: vs.visibleArea.azimuth,
+                   distance: vs.visibleArea.distance
+               })), null, 2);
+               alert(exported); // You can replace this with a better export method
+           };
+           document.getElementById("importViewsheds").onclick = function() {
+               const json = document.getElementById("importArea").value;
+               const imported = JSON.parse(json);
+               imported.forEach(data => {
+                   const point = new Point({
+                       longitude: data.long,
+                       latitude: data.lat,
+                       z: data.height
+                   });
+                   const viewshed = new Viewshed({
+                       observerLocation: point,
+                       visibleArea: {
+                           distance: data.distance,
+                           azimuth: data.angle
+                       }
+                   });
+                   viewsheds.push(viewshed);
+                   view.graphics.add(new Graphic({
+                       geometry: point,
+                       symbol: {
+                           type: "simple-marker",
+                           color: "red",
+                           size: "10px"
+                       }
+                   }));
+               });
+               updateViewshedList();
+               document.getElementById("importArea").style.display = "none"; // Hide import area
+               clearInputs();
+           };
+           function clearInputs() {
+               document.getElementById("lat").value = "";
+               document.getElementById("long").value = "";
+               document.getElementById("height").value = "";
+               document.getElementById("angle").value = "";
+               document.getElementById("distance").value = "";
+           }
+       });
+</script>
+</body>
+</html>

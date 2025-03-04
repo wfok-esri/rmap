@@ -79,8 +79,8 @@
                                    const segmentStart = new Point(path[i]);
                                    const segmentEnd = new Point(path[i + 1]);
                                    // Calculate distance from the start and end points to the segment
-                                   const distanceToStart = distanceOperator.calculate(start, segmentStart);
-                                   const distanceToEnd = distanceOperator.calculate(end, segmentEnd);
+                                   const distanceToStart = distanceOperator.execute(start, segmentStart);
+                                   const distanceToEnd = distanceOperator.execute(end, segmentEnd);
                                    // Check if both start and end points are close to the segment
                                    if (distanceToStart < minDistance && distanceToEnd < minDistance) {
                                        minDistance = Math.min(distanceToStart, distanceToEnd);

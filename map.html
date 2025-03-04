@@ -11,7 +11,8 @@
 <div id="viewDiv" style="height: 100vh;"></div>
 <script>
        require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer",
-   "esri/widgets/Sketch", "esri/geometry/Polyline", "esri/Graphic", "esri/geometry/geometryEngine"], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, geometryEngine) {
+   "esri/widgets/Sketch", "esri/geometry/Polyline", "esri/Graphic", "esri/geometry/operators/distanceOperator",
+           "esri/geometry/operators/proximityOperator"], function(Map, MapView, FeatureLayer, Sketch, Graphic, Polyline, distanceOperator, proximityOperator) {
            const map = new Map({ basemap: "streets-navigation-vector" });
            const view = new MapView({
                container: "viewDiv",
@@ -37,7 +38,7 @@
            // Functionality to handle mouse events
            view.on("click", function(event) {
                // Logic to start drawing on existing line segment
-               // Use geometryEngine to find the nearest line segment
+               // Use distanceOperator, proximityOperator to find the nearest line segment
            });
            // Handle mouse down to start drawing
            view.on("mousedown", function(event) {

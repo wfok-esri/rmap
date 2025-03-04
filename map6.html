@@ -70,8 +70,11 @@
                // Query the trail layer for features
                trailLayer.queryFeatures().then(function(results) {
                    if (results.features.length > 0) {
-                       let closestSegment = null;
-                       let minDistance = Infinity;
+                       let closestStartSegment = null;
+                       let closestEndSegment = null;
+                       let minStartDistance = Infinity;
+                       let minEndDistance = Infinity;
+                       // Find the closest segments to the start and end points
                        results.features.forEach(function(feature) {
                            const paths = feature.geometry.paths;
                            paths.forEach(function(path) {
@@ -79,20 +82,32 @@
                                    const segmentStart = new Point(path[i]);
                                    const segmentEnd = new Point(path[i + 1]);
                                    // Calculate distance from the start and end points to the segment
-                                   const distanceToStart = distanceOperator.execute(start, segmentStart);
-                                   const distanceToEnd = distanceOperator.execute(end, segmentEnd);
-                                   // Check if both start and end points are close to the segment
-                                   if (distanceToStart < minDistance && distanceToEnd < minDistance) {
-                                       minDistance = Math.min(distanceToStart, distanceToEnd);
-                                       closestSegment = path; // Keep the closest segment path
+                                   const distanceToStart = distanceOperator.execute(start, segmentStart, "meters");
+                                   const distanceToEnd = distanceOperator.execute(end, segmentEnd, "meters");
+                                   if (distanceToStart < minStartDistance) {
+                                       minStartDistance = distanceToStart;
+                                       closestStartSegment = path; // Keep the closest start segment path
+                                   }
+                                   if (distanceToEnd < minEndDistance) {
+                                       minEndDistance = distanceToEnd;
+                                       closestEndSegment = path; // Keep the closest end segment path
                                    }
                                }
                            });
                        });
-                       if (closestSegment) {
+                       if (closestStartSegment && closestEndSegment) {
+                           // Create a polyline that follows the trail from the closest start to the closest end
                            const polyline = new Polyline({
-                               paths: [closestSegment]
+                               paths: [closestStartSegment] // Start with the closest start segment
                            });
+                           // Check if the closest start and end segments are part of the same trail
+                           if (closestStartSegment === closestEndSegment) {
+                               // If they are the same, just draw the segment
+                               polyline.paths.push(closestEndSegment);
+                           } else {
+                               // Otherwise, we need to trace through the segments to connect them
+                               traceTrail(closestStartSegment, closestEndSegment, results.features, polyline);
+                           }
                            if (lineGraphic) {
                                view.graphics.remove(lineGraphic); // Remove previous line
                            }
@@ -110,6 +125,32 @@
                        }
                    }
                });
+           }
+           function traceTrail(startSegment, endSegment, features, polyline) {
+               // Logic to trace through trail segments from start to end
+               const trailPaths = features.map(feature => feature.geometry.paths).flat();
+               let foundStart = false;
+               for (let path of trailPaths) {
+                   for (let i = 0; i < path.length - 1; i++) {
+                       const segmentStart = new Point(path[i]);
+                       const segmentEnd = new Point(path[i + 1]);
+                       // Check if we found the start segment
+                       if (foundStart) {
+                           polyline.paths[0].push(segmentStart);
+                           polyline.paths[0].push(segmentEnd);
+                       }
+                       // If the current segment is the start segment, mark it as found
+                       if (segmentStart.equals(startSegment[0]) && !foundStart) {
+                           foundStart = true;
+                           polyline.paths[0].push(segmentStart);
+                       }
+                       // If we reach the end segment, stop tracing
+                       if (foundStart && segmentEnd.equals(endSegment[endSegment.length - 1])) {
+                           polyline.paths[0].push(segmentEnd);
+                           return; // Stop tracing
+                       }
+                   }
+               }
            }
        });
 </script>

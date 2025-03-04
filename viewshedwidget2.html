@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Interactive viewshed analysis | Sample | ArcGIS Maps SDK for JavaScript 4.31</title>
+    <style>
+      html,
+      body,
+      #sceneview {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #previewContainer {
+        pointer-events: none;
+        width: 200px;
+        height: 125px;
+        margin: 0;
+        position: absolute;
+        bottom: 25px;
+        right: 10px;
+        border: 1px solid dimgrey;
+      }
+
+      arcgis-scene {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      #limitFOV {
+        margin-top: 0.4rem;
+        padding-top: 0.4rem;
+        height: 0.8rem;
+        transform: translateY(3px);
+      }
+
+      #viewshedControls {
+        position: absolute;
+        width: 270px;
+        right: var(--calcite-spacing-xxl);
+        top: var(--calcite-spacing-xxl);
+      }
+
+      #viewshedControls calcite-button {
+        display: flex;
+      }
+
+      #promptText {
+        margin-top: 0.4rem;
+      }
+    </style>
+
+    <!-- Load Calcite components from CDN -->
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+
+    <!-- Load the ArcGIS Maps SDK for JavaScript -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.31/"></script>
+
+    <!-- Load Map components from CDN-->
+    <script
+      type="module"
+      src="https://js.arcgis.com/map-components/4.31/arcgis-map-components.esm.js"
+    ></script>
+  </head>
+
+  <body>
+    <arcgis-scene id="sceneview" item-id="ea0dff6e8e3b442a9fe37560ee16f830">
+      <arcgis-zoom position="top-left"> </arcgis-zoom>
+      <arcgis-navigation-toggle position="top-left"> </arcgis-navigation-toggle>
+      <arcgis-compass position="top-left"> </arcgis-compass>
+    </arcgis-scene>
+
+    <div id="previewContainer"></div>
+
+    <calcite-card id="viewshedControls">
+      <calcite-button id="createButton">Create viewshed</calcite-button>
+      <calcite-button id="cancelButton" style="display: none">Cancel </calcite-button>
+      <div id="promptText" style="display: none">
+        <em>Start the analysis by clicking in the scene to place the observer point and set the target.</em>
+      </div>
+      <calcite-label layout="inline-space-between" id="limitFOV">
+        Limit maximum field of view
+        <calcite-switch checked id="limitFOVSwitch"></calcite-switch>
+      </calcite-label>
+    </calcite-card>
+
+    <script>
+      require([
+        "esri/WebScene",
+        "esri/Camera",
+        "esri/views/SceneView",
+        "esri/analysis/ViewshedAnalysis",
+        "esri/analysis/Viewshed",
+        "esri/geometry/SpatialReference",
+        "esri/core/promiseUtils",
+        "esri/core/reactiveUtils"
+      ], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
+        /**********************************************
+         * Environment
+         *********************************************/
+        // Access arcgis-scene component to get the scene
+        const sceneElement = document.getElementById("sceneview");
+        sceneElement.addEventListener("arcgisViewReadyChange", () => {
+          const view = sceneElement.view;
+
+          view.when(async () => {
+            /**********************************************
+             * Create the analysis and a viewshed
+             *********************************************/
+
+
+            // Initialize viewshed analysis and add it to the view.
+            const viewshedAnalysis = new ViewshedAnalysis();
+            view.analyses.add(viewshedAnalysis);
+
+            // Create the viewshed shape programmatically and add it to the analysis.
+            const programaticViewshed = new Viewshed({
+              observer: {
+                spatialReference: SpatialReference.WebMercator,
+                x: -9754426,
+                y: 5143111,
+                z: 330
+              },
+              farDistance: 900, // In meters
+              tilt: 84, // Tilt of 0 looks down, tilt of 90 looks parallel to the ground, tilt of 180 looks up to the sky
+              heading: 63, // Counted clockwise from North
+              horizontalFieldOfView: 85,
+              verticalFieldOfView: 60
+            });
+            viewshedAnalysis.viewsheds.add(programaticViewshed);
+
+
+            // Add a flag for creation and save current number of viewsheds to track whenever a new one is created.
+            let creatingStarted = false;
+            let viewshedCounter = viewshedAnalysis.viewsheds.length;
+
+            // Access the viewshed's analysis view.
+            const analysisView = await view.whenAnalysisView(viewshedAnalysis);
+
+            // Make the analysis interactive and select the programmatically created viewshed.
+            analysisView.interactive = true;
+            analysisView.selectedViewshed = programaticViewshed;
+
+            /**********************************************
+             * Viewshed controls UI element
+             *********************************************/
+            // Add interactivity to the custom UI component's buttons.
+            const createButton = document.getElementById("createButton");
+            const cancelButton = document.getElementById("cancelButton");
+            const promptText = document.getElementById("promptText");
+
+
+            // Controller which later allows to stop an ongoing viewshed creation operation.
+            let abortController = null;
+
+            createButton.addEventListener("click", () => {
+              startCreating();
+            });
+
+
+            // Whenever a new viewshed is added, stop the creation process and update the UI accordingly.
+            // The user can now edit the created viewshed.
+            reactiveUtils.when(
+              () => viewshedAnalysis.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
+              () => {
+                stopCreating();
+              }
+            );
+            // Whenever viewshed creation finished with a double-click but viewshed count didn't increase,
+            // initiate again the creation mode.
+            window.addEventListener("dblclick", () => {
+              if (creatingStarted && viewshedAnalysis.viewsheds.length == viewshedCounter) {
+                startCreating();
+              }
+            });
+
+            // "Cancel" button stops the viewshed creation process and updates the UI accordingly.
+
+            cancelButton.addEventListener("click", () => {
+              stopCreating();
+            });
+
+
+            // Also, ESC key stops the viewshed creation process and updates the UI accordingly.
+            view.on("key-down", (event) => {
+              if (event.key == "Escape") {
+                stopCreating();
+              }
+            });
+
+            /**********************************************
+             * Field of view switch
+             *********************************************/
+
+            // Include a switch to the controls panel to limit the maximum field of view of the selected viewshed.
+            const horizontalLimit = 120;
+            const verticalLimit = 90;
+            const limitFOVSwitch = document.getElementById("limitFOVSwitch");
+            limitFOVSwitch.addEventListener("calciteSwitchChange", checkFOV);
+
+            reactiveUtils.watch(() => {
+              const viewshed = analysisView?.selectedViewshed;
+              return viewshed ? [viewshed.horizontalFieldOfView, viewshed.verticalFieldOfView] : null;
+            }, checkFOV);
+
+            /**********************************************
+             * Preview camera at the selected viewshed's observer
+             *********************************************/
+
+            const previewContainer = document.getElementById("previewContainer");
+            initializePreview(previewContainer, view, programaticViewshed, analysisView);
+
+            // Show the preview only if a viewshed is selected.
+            reactiveUtils.watch(
+              () => analysisView?.selectedViewshed,
+              (selectedViewshed) => {
+                previewContainer.style.display = selectedViewshed ? "flex" : "none";
+                limitFOVSwitch.disabled = selectedViewshed ? false : true;
+              }
+            );
+
+            /**********************************************
+             * Helper functions
+             *********************************************/
+
+            function startCreating() {
+
+              // Stop any pending creation operation.
+              stopCreating();
+              creatingStarted = true;
+
+              // Create a new abort controller for the new operation.
+              abortController = new AbortController();
+
+              // Update the UI to reflect that the creation process has started.
+              updateUI();
+
+              // Pass the controller as an argument to the interactive creation method.
+              analysisView
+                .createViewsheds({ signal: abortController.signal })
+
+                .catch((e) => {
+                  // When the operation is stopped, don't do anything. Any other errors are thrown.
+                  if (!promiseUtils.isAbortError(e)) {
+                    throw e;
+                  }
+                })
+                .finally(() => {
+                  // Schedule to update the UI once creating viewsheds is finished.
+                  updateUI();
+                });
+
+            }
+
+
+            // Stop any pending viewshed creation operation with the abortController.
+
+            function stopCreating() {
+              abortController?.abort();
+              abortController = null;
+              updateUI();
+
+              // Update the indicators to detect if viewshed count changed or not.
+              creatingStarted = false;
+              viewshedCounter = viewshedAnalysis.viewsheds.length;
+
+            }
+
+
+            // Update the UI component according to whether there is a pending operation.
+            function updateUI() {
+              const creating = abortController != null;
+              createButton.style.display = creating ? "none" : "flex";
+              cancelButton.style.display = creating ? "flex" : "none";
+              promptText.style.display = creating ? "flex" : "none";
+            }
+            // Limit the selected viewshed's field of view, in case the switch is enabled.
+            function checkFOV() {
+              const viewshed = analysisView?.selectedViewshed;
+
+              if (!viewshed || !limitFOVSwitch.checked) {
+                return;
+              }
+
+              if (viewshed.horizontalFieldOfView > horizontalLimit) {
+                viewshed.horizontalFieldOfView = horizontalLimit;
+              }
+
+              if (viewshed.verticalFieldOfView > verticalLimit) {
+                viewshed.verticalFieldOfView = verticalLimit;
+              }
+
+            }
+          });
+        });
+
+        /**
+         * Creates a new <arcgis-scene> component which displays a preview of the viewshed analysis.
+         */
+        function initializePreview(previewContainer, view, programaticViewshed, analysisView) {
+          // Create a new scene component with the same set of layers as the main one.
+          const previewElement = document.createElement("arcgis-scene");
+          previewElement.map = view.map;
+          // Once the component is loaded, adjust more of its settings and change its camera to reflect the viewshed observer setup.
+          previewElement.addEventListener("arcgisViewReadyChange", () => {
+            const previewView = previewElement.view;
+            previewView.camera = getCameraFromViewshed(programaticViewshed);
+            previewView.environment = view.environment;
+            previewView.ui.components = [];
+
+            // Have the preview's camera update dependent on the selected viewshed.
+            reactiveUtils.when(
+              () => {
+                const viewshed = analysisView.selectedViewshed;
+                return viewshed ? getCameraFromViewshed(viewshed) : null;
+              },
+              (camera) => {
+                previewView.camera = camera;
+              }
+            );
+          });
+
+          previewContainer.appendChild(previewElement);
+        }
+
+        function getCameraFromViewshed(viewshed) {
+          return new Camera({
+            position: viewshed.observer,
+            heading: viewshed.heading,
+            tilt: viewshed.tilt,
+            // Calculate camera's diagonal field of view angle.
+            fov: getDiagonal(viewshed.verticalFieldOfView, viewshed.horizontalFieldOfView)
+          });
+        }
+        function getDiagonal(a, b) {
+          return Math.sqrt(a ** 2 + b ** 2);
+        }
+
+      });
+    </script>
+  </body>
+</html>

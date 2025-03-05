@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -21,16 +21,30 @@
            right: 10px;
            border: 1px solid dimgrey;
        }
+       arcgis-scene {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+       }
        #viewshedControls {
            position: absolute;
            width: 270px;
-           right: 20px;
-           top: 20px;
+           right: var(--calcite-spacing-xxl);
+           top: var(--calcite-spacing-xxl);
+       }
+       #viewshedControls calcite-button {
+           display: flex;
+       }
+       #promptText {
+           margin-top: 0.4rem;
        }
 </style>
 <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
 <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
 <script src="https://js.arcgis.com/4.31/"></script>
+<script type="module" src="https://js.arcgis.com/map-components/4.31/arcgis-map-components.esm.js"></script>
 </head>
 <body>
 <arcgis-scene id="sceneview" item-id="ea0dff6e8e3b442a9fe37560ee16f830">
@@ -39,128 +53,105 @@
 <arcgis-compass position="top-left"></arcgis-compass>
 </arcgis-scene>
 <div id="previewContainer"></div>
-<div id="viewshedControls">
-<calcite-card>
-<calcite-label layout="inline-space-between">
-               Mode:
-<calcite-switch id="inputModeSwitch">Manual Input</calcite-switch>
+<calcite-card id="viewshedControls">
+<calcite-button id="createButton">Create viewshed</calcite-button>
+<calcite-button id="cancelButton" style="display: none">Cancel</calcite-button>
+<calcite-label layout="inline-space-between" id="limitFOV">
+           Limit maximum field of view
+<calcite-switch checked id="limitFOVSwitch"></calcite-switch>
 </calcite-label>
-<div id="manualInput">
-<label>Latitude: <input type="number" id="lat" /></label><br>
-<label>Longitude: <input type="number" id="long" /></label><br>
-<label>Height: <input type="number" id="height" /></label><br>
-<label>View Angle: <input type="number" id="angle" /></label><br>
-<label>Distance: <input type="number" id="distance" /></label><br>
-<calcite-button id="createButton">Create Viewshed</calcite-button>
-</div>
-<calcite-button id="cancelButton" style="display: none;">Cancel</calcite-button>
-<div id="viewshedList"></div>
-<calcite-button id="exportViewsheds">Export Viewsheds</calcite-button>
-<calcite-button id="importViewsheds">Import Viewsheds</calcite-button>
-<textarea id="importArea" placeholder="Paste JSON here" rows="5" style="width: 100%; display: none;"></textarea>
+<calcite-button id="exportButton">Export Viewsheds</calcite-button>
+<calcite-button id="importButton">Import Viewsheds</calcite-button>
+<input type="file" id="fileInput" style="display:none"/>
+<textarea id="jsonInput" style="display:none" placeholder="Paste JSON here..."></textarea>
 </calcite-card>
-</div>
 <script>
        require([
            "esri/WebScene",
-           "esri/Camera",
            "esri/views/SceneView",
            "esri/analysis/ViewshedAnalysis",
            "esri/analysis/Viewshed",
-           "esri/geometry/Point",
-           "esri/core/reactiveUtils",
-           "esri/core/promiseUtils"
-       ], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, Point, reactiveUtils, promiseUtils) => {
+           "esri/geometry/SpatialReference",
+           "esri/core/reactiveUtils"
+       ], (WebScene, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, reactiveUtils) => {
            const sceneElement = document.getElementById("sceneview");
-           let view, viewshedAnalysis;
-           const viewsheds = [];
            sceneElement.addEventListener("arcgisViewReadyChange", () => {
-               view = sceneElement.view;
+               const view = sceneElement.view;
                view.when(async () => {
-                   viewshedAnalysis = new ViewshedAnalysis();
+                   const viewshedAnalysis = new ViewshedAnalysis();
                    view.analyses.add(viewshedAnalysis);
-                   // Click and drag mode
-                   view.on("click", (event) => {
-                       if (!document.getElementById("inputModeSwitch").checked) {
-                           return; // Only allow if manual input is off
+                   let viewshedCounter = viewshedAnalysis.viewsheds.length;
+                   const createButton = document.getElementById("createButton");
+                   const cancelButton = document.getElementById("cancelButton");
+                   createButton.addEventListener("click", () => {
+                       startCreating();
+                   });
+                   cancelButton.addEventListener("click", stopCreating);
+                   document.getElementById("exportButton").addEventListener("click", exportViewsheds);
+                   document.getElementById("importButton").addEventListener("click", importViewsheds);
+                   function startCreating() {
+                       const lat = prompt("Enter Latitude:");
+                       const long = prompt("Enter Longitude:");
+                       const height = prompt("Enter Height:");
+                       const viewAngle = prompt("Enter View Angle (horizontal):");
+                       const distance = prompt("Enter Distance:");
+                       const newViewshed = new Viewshed({
+                           observer: {
+                               spatialReference: SpatialReference.WebMercator,
+                               x: long,
+                               y: lat,
+                               z: height
+                           },
+                           farDistance: distance,
+                           horizontalFieldOfView: viewAngle,
+                           verticalFieldOfView: viewAngle // Assuming square view
+                       });
+                       viewshedAnalysis.viewsheds.add(newViewshed);
+                   }
+                   function stopCreating() {
+                       // Logic to stop creating viewshed
+                   }
+                   function exportViewsheds() {
+                       const viewsheds = viewshedAnalysis.viewsheds.map(vs => ({
+                           lat: vs.observer.y,
+                           long: vs.observer.x,
+                           height: vs.observer.z,
+                           horizontalFieldOfView: vs.horizontalFieldOfView,
+                           verticalFieldOfView: vs.verticalFieldOfView,
+                           farDistance: vs.farDistance
+                       }));
+                       const json = JSON.stringify(viewsheds);
+                       console.log("Exported Viewsheds:", json);
+                       alert("Viewsheds exported to console.");
+                   }
+                   function importViewsheds() {
+                       const fileInput = document.getElementById("fileInput");
+                       fileInput.click();
+                       fileInput.onchange = (event) => {
+                           const file = event.target.files[0];
+                           const reader = new FileReader();
+                           reader.onload = function(e) {
+                               const viewsheds = JSON.parse(e.target.result);
+                               viewsheds.forEach(vs => {
+                                   const newViewshed = new Viewshed({
+                                       observer: {
+                                           spatialReference: SpatialReference.WebMercator,
+                                           x: vs.long,
+                                           y: vs.lat,
+                                           z: vs.height
+                                       },
+                                       farDistance: vs.farDistance,
+                                       horizontalFieldOfView: vs.horizontalFieldOfView,
+                                       verticalFieldOfView: vs.verticalFieldOfView
+                                   });
+                                   viewshedAnalysis.viewsheds.add(newViewshed);
+                               });
+                           };
+                           reader.readAsText(file);
                        }
-                       const lat = event.mapPoint.latitude;
-                       const long = event.mapPoint.longitude;
-                       const height = parseFloat(document.getElementById("height").value) || 0;
-                       const angle = parseFloat(document.getElementById("angle").value) || 0;
-                       const distance = parseFloat(document.getElementById("distance").value) || 0;
-                       createViewshed(lat, long, height, angle, distance);
-                   });
-                   document.getElementById("createButton").addEventListener("click", () => {
-                       const lat = parseFloat(document.getElementById("lat").value);
-                       const long = parseFloat(document.getElementById("long").value);
-                       const height = parseFloat(document.getElementById("height").value);
-                       const angle = parseFloat(document.getElementById("angle").value);
-                       const distance = parseFloat(document.getElementById("distance").value);
-                       createViewshed(lat, long, height, angle, distance);
-                   });
-                   document.getElementById("exportViewsheds").addEventListener("click", exportViewsheds);
-                   document.getElementById("importViewsheds").addEventListener("click", importViewsheds);
+                   }
                });
            });
-           function createViewshed(lat, long, height, angle, distance) {
-               const point = new Point({
-                   longitude: long,
-                   latitude: lat,
-                   z: height
-               });
-               const viewshed = new Viewshed({
-                   observer: point,
-                   farDistance: distance,
-                   tilt: 90, // Default tilt
-                   heading: angle,
-                   horizontalFieldOfView: 85, // Default FOV
-                   verticalFieldOfView: 60 // Default FOV
-               });
-               viewshedAnalysis.viewsheds.add(viewshed);
-               viewsheds.push(viewshed);
-               updateViewshedList();
-               clearInputs();
-           }
-           function updateViewshedList() {
-               const list = document.getElementById("viewshedList");
-               list.innerHTML = "";
-               viewsheds.forEach((vs, index) => {
-                   const item = document.createElement("div");
-                   item.innerHTML = `Viewshed ${index + 1} <button onclick="removeViewshed(${index})">Remove</button>`;
-                   list.appendChild(item);
-               });
-           }
-           window.removeViewshed = function(index) {
-               viewshedAnalysis.viewsheds.remove(viewsheds[index]);
-               viewsheds.splice(index, 1);
-               updateViewshedList();
-           };
-           function exportViewsheds() {
-               const exported = JSON.stringify(viewsheds.map(vs => ({
-                   lat: vs.observer.latitude,
-                   long: vs.observer.longitude,
-                   height: vs.observer.z,
-                   angle: vs.heading,
-                   distance: vs.farDistance
-               })), null, 2);
-               alert(exported); // Replace with a better export method if needed
-           }
-           function importViewsheds() {
-               const json = document.getElementById("importArea").value;
-               const imported = JSON.parse(json);
-               imported.forEach(data => {
-                   createViewshed(data.lat, data.long, data.height, data.angle, data.distance);
-               });
-               document.getElementById("importArea").style.display = "none"; // Hide import area
-           }
-           function clearInputs() {
-               document.getElementById("lat").value = "";
-               document.getElementById("long").value = "";
-               document.getElementById("height").value = "";
-               document.getElementById("angle").value = "";
-               document.getElementById("distance").value = "";
-           }
        });
 </script>
 </body>

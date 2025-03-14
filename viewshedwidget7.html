@@ -70,6 +70,9 @@ arcgis-scene {
    pointer-events: auto;
    background: white;
 }
+.viewshed-item calcite-button {
+    margin-left: 5px;
+}
 </style>
 <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
 <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
@@ -84,19 +87,19 @@ arcgis-scene {
 </arcgis-scene>
 <div id="previewContainer"></div>
 <calcite-card id="viewshedControls">
-<calcite-button id="createButton" icon-start="plus">Create Viewshed</calcite-button>
-<calcite-button id="cancelButton" icon-start="x" style="display: none">Cancel</calcite-button>
-<calcite-button id="toggleModeButton" icon-start="edit">Switch to Manual Input</calcite-button>
+<calcite-button id="createButton">Create Viewshed</calcite-button>
+<calcite-button id="cancelButton" style="display: none">Cancel</calcite-button>
+<calcite-button id="toggleModeButton">Switch to Manual Input</calcite-button>
 <div id="manualInputForm">
 <calcite-input id="latInput" placeholder="Latitude"></calcite-input>
 <calcite-input id="longInput" placeholder="Longitude"></calcite-input>
 <calcite-input id="heightInput" placeholder="Height"></calcite-input>
 <calcite-input id="angleInput" placeholder="View Angle"></calcite-input>
 <calcite-input id="distanceInput" placeholder="Distance"></calcite-input>
-<calcite-button id="addManualViewshed" icon-start="plus">Add Viewshed</calcite-button>
+<calcite-button id="addManualViewshed">Add Viewshed</calcite-button>
 </div>
-<calcite-button id="exportButton" icon-start="download">Export Viewsheds</calcite-button>
-<calcite-button id="importButton" icon-start="upload">Import Viewsheds</calcite-button>
+<calcite-button id="exportButton">Export Viewsheds</calcite-button>
+<calcite-button id="importButton">Import Viewsheds</calcite-button>
 </calcite-card>
 <calcite-card id="viewshedListCard">
 <calcite-card-title>Viewshed List</calcite-card-title>
@@ -299,6 +302,21 @@ require([
            viewshed.visible = !viewshed.visible;
            hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
          });
+         const zoomButton = document.createElement('calcite-button');
+         zoomButton.iconStart = "magnifying-glass";
+         zoomButton.addEventListener('click', () => {
+             const camera = new Camera({
+                 position: {
+                     spatialReference: SpatialReference.WebMercator,
+                     x: viewshed.observer.x,
+                     y: viewshed.observer.y,
+                     z: viewshed.observer.z + 1000 // Adjust the height as needed
+                 },
+                 tilt: 0,
+                 heading: 0
+             });
+             view.goTo(camera);
+         });
          const removeButton = document.createElement('calcite-button');
          removeButton.iconStart = "trash";
          removeButton.addEventListener('click', () => {
@@ -308,6 +326,7 @@ require([
          item.appendChild(nameInput);
          item.appendChild(renameButton);
          item.appendChild(hideButton);
+         item.appendChild(zoomButton);
          item.appendChild(removeButton);
          viewshedList.appendChild(item);
        }

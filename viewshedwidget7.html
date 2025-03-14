@@ -312,11 +312,11 @@ require([
           if (!nameInput.disabled) nameInput.focus();
         });
         const hideButton = document.createElement('calcite-button');
-        hideButton.iconStart = viewshed.visible ? "eye" : "eye-closed";
+        hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
         hideButton.title = viewshed.visible ? "Hide" : "Show";
         hideButton.addEventListener('click', () => {
           viewshed.visible = !viewshed.visible;
-          hideButton.iconStart = viewshed.visible ? "eye" : "eye-closed";
+          hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
           hideButton.title = viewshed.visible ? "Hide" : "Show";
         });
         const zoomButton = document.createElement('calcite-button');

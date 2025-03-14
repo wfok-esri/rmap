@@ -45,14 +45,6 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     cursor: move;
-    transition: width 0.3s ease;
-  }
-  #viewshedListCard.collapsed {
-    width: 40px;
-  }
-  #viewshedListCard.collapsed #viewshedList,
-  #viewshedListCard.collapsed calcite-card-title {
-    display: none;
   }
   #viewshedListCard calcite-card-title {
     padding: 10px;
@@ -86,11 +78,6 @@
   calcite-button {
     margin: 0;
   }
-  #collapseButton {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-  }
 </style>
 <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
 <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
@@ -121,7 +108,6 @@
 </div>
 <calcite-card id="viewshedListCard">
   <calcite-card-title>Viewshed List</calcite-card-title>
-  <calcite-button id="collapseButton" icon-start="chevron-right" appearance="transparent" title="Collapse List"></calcite-button>
   <div id="viewshedList"></div>
 </calcite-card>
 <script>
@@ -155,7 +141,6 @@ require([
       const importButton = document.getElementById("importButton");
       const viewshedList = document.getElementById("viewshedList");
       const viewshedListCard = document.getElementById("viewshedListCard");
-      const collapseButton = document.getElementById("collapseButton");
 
       let abortController = null;
       let isManualMode = false;
@@ -180,13 +165,6 @@ require([
         isDragging = false;
       });
 
-      // Collapse/Expand functionality
-      collapseButton.addEventListener("click", () => {
-        viewshedListCard.classList.toggle("collapsed");
-        collapseButton.iconStart = viewshedListCard.classList.contains("collapsed") ? "chevron-left" : "chevron-right";
-        collapseButton.title = viewshedListCard.classList.contains("collapsed") ? "Expand List" : "Collapse List";
-      });
-
       createButton.addEventListener("click", () => startCreating());
       toggleModeButton.addEventListener("click", () => {
         isManualMode = !isManualMode;
@@ -203,6 +181,18 @@ require([
       view.on("key-down", (event) => {
         if (event.key == "Escape") stopCreating();
       });
+
+      // Add viewsheds created in click & drag mode to the list
+      reactiveUtils.watch(
+        () => viewshedAnalysis.viewsheds.length,
+        () => {
+          if (viewshedAnalysis.viewsheds.length > viewshedCounter) {
+            const newViewshed = viewshedAnalysis.viewsheds.getItem(viewshedAnalysis.viewsheds.length - 1);
+            addViewshedToList(newViewshed);
+            viewshedCounter = viewshedAnalysis.viewsheds.length;
+          }
+        }
+      );
 
       function startCreating() {
         stopCreating();
@@ -222,7 +212,6 @@ require([
         abortController = null;
         updateUI();
         creatingStarted = false;
-        viewshedCounter = viewshedAnalysis.viewsheds.length;
       }
 
       function updateUI() {
@@ -247,7 +236,6 @@ require([
             verticalFieldOfView: 60
           });
           viewshedAnalysis.viewsheds.add(manualViewshed);
-          addViewshedToList(manualViewshed);
         }
       }
 
@@ -289,7 +277,6 @@ require([
                 verticalFieldOfView: 60
               });
               viewshedAnalysis.viewsheds.add(viewshed);
-              addViewshedToList(viewshed);
             });
           };
           reader.readAsText(file);

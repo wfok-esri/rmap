@@ -5,71 +5,79 @@
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 <title>Interactive Viewshed Analysis</title>
 <style>
-html, body, #sceneview {
-   width: 100%;
-   height: 100%;
-   margin: 0;
-   padding: 0;
-}
-#previewContainer {
-   pointer-events: none;
-   width: 200px;
-   height: 125px;
-   margin: 0;
-   position: absolute;
-   bottom: 25px;
-   right: 10px;
-   border: 1px solid dimgrey;
-}
-arcgis-scene {
-   position: absolute;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
-}
-#viewshedControls {
-   position: absolute;
-   width: 270px;
-   right: var(--calcite-spacing-xxl);
-   top: var(--calcite-spacing-xxl);
-}
-#viewshedListCard {
-   position: absolute;
-   width: 270px;
-   right: var(--calcite-spacing-xxl);
-   top: calc(var(--calcite-spacing-xxl) + 300px);
-   cursor: move;
-}
-#viewshedControls calcite-button {
-   display: flex;
-}
-#manualInputForm {
-   display: none;
-   margin-top: 10px;
-}
-#viewshedList {
-   margin-top: 10px;
-}
-.viewshed-item {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   margin-bottom: 5px;
-}
-.viewshed-name {
-   flex: 1;
-   margin-right: 10px;
-}
-.viewshed-name input {
-   border: none;
-   background: none;
-   pointer-events: none;
-}
-.viewshed-name input:focus {
-   pointer-events: auto;
-   background: white;
-}
+  html, body, #sceneview {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  #previewContainer {
+    pointer-events: none;
+    width: 200px;
+    height: 125px;
+    margin: 0;
+    position: absolute;
+    bottom: 25px;
+    right: 10px;
+    border: 1px solid dimgrey;
+  }
+  arcgis-scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #viewshedListCard {
+    position: absolute;
+    top: 150px;
+    right: 20px;
+    width: 270px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    cursor: move;
+  }
+  #viewshedListCard calcite-card-title {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  #viewshedList {
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .viewshed-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .viewshed-name {
+    flex: 1;
+    margin-right: 10px;
+  }
+  .viewshed-name input {
+    border: none;
+    background: none;
+    pointer-events: none;
+    width: 100%;
+  }
+  .viewshed-name input:focus {
+    pointer-events: auto;
+    background: white;
+  }
+  calcite-button {
+    margin: 0;
+  }
 </style>
 <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
 <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
@@ -78,241 +86,227 @@ arcgis-scene {
 </head>
 <body>
 <arcgis-scene id="sceneview" item-id="ea0dff6e8e3b442a9fe37560ee16f830">
-<arcgis-zoom position="top-left"></arcgis-zoom>
-<arcgis-navigation-toggle position="top-left"></arcgis-navigation-toggle>
-<arcgis-compass position="top-left"></arcgis-compass>
+  <arcgis-zoom position="top-left"></arcgis-zoom>
+  <arcgis-navigation-toggle position="top-left"></arcgis-navigation-toggle>
+  <arcgis-compass position="top-left"></arcgis-compass>
 </arcgis-scene>
 <div id="previewContainer"></div>
-<calcite-card id="viewshedControls">
-<calcite-button id="createButton" icon-start="plus">Create Viewshed</calcite-button>
-<calcite-button id="cancelButton" icon-start="x" style="display: none">Cancel</calcite-button>
-<calcite-button id="toggleModeButton" icon-start="edit">Switch to Manual Input</calcite-button>
-<div id="manualInputForm">
-<calcite-input id="latInput" placeholder="Latitude"></calcite-input>
-<calcite-input id="longInput" placeholder="Longitude"></calcite-input>
-<calcite-input id="heightInput" placeholder="Height"></calcite-input>
-<calcite-input id="angleInput" placeholder="View Angle"></calcite-input>
-<calcite-input id="distanceInput" placeholder="Distance"></calcite-input>
-<calcite-button id="addManualViewshed" icon-start="plus">Add Viewshed</calcite-button>
+<div id="controls">
+  <calcite-button id="createButton" icon-start="plus" appearance="solid"></calcite-button>
+  <calcite-button id="cancelButton" icon-start="x" appearance="solid" style="display: none"></calcite-button>
+  <calcite-button id="toggleModeButton" icon-start="cursor" appearance="solid"></calcite-button>
+  <div id="manualInputForm" style="display: none;">
+    <calcite-input id="latInput" placeholder="Latitude"></calcite-input>
+    <calcite-input id="longInput" placeholder="Longitude"></calcite-input>
+    <calcite-input id="heightInput" placeholder="Height"></calcite-input>
+    <calcite-input id="angleInput" placeholder="View Angle"></calcite-input>
+    <calcite-input id="distanceInput" placeholder="Distance"></calcite-input>
+    <calcite-button id="addManualViewshed" icon-start="plus" appearance="solid">Add</calcite-button>
+  </div>
+  <calcite-button id="exportButton" icon-start="download" appearance="solid"></calcite-button>
+  <calcite-button id="importButton" icon-start="upload" appearance="solid"></calcite-button>
 </div>
-<calcite-button id="exportButton" icon-start="download">Export Viewsheds</calcite-button>
-<calcite-button id="importButton" icon-start="upload">Import Viewsheds</calcite-button>
-</calcite-card>
 <calcite-card id="viewshedListCard">
-<calcite-card-title>Viewshed List</calcite-card-title>
-<div id="viewshedList"></div>
+  <calcite-card-title>Viewshed List</calcite-card-title>
+  <div id="viewshedList"></div>
 </calcite-card>
 <script>
 require([
-   "esri/WebScene",
-   "esri/Camera",
-   "esri/views/SceneView",
-   "esri/analysis/ViewshedAnalysis",
-   "esri/analysis/Viewshed",
-   "esri/geometry/SpatialReference",
-   "esri/core/promiseUtils",
-   "esri/core/reactiveUtils"
+  "esri/WebScene",
+  "esri/Camera",
+  "esri/views/SceneView",
+  "esri/analysis/ViewshedAnalysis",
+  "esri/analysis/Viewshed",
+  "esri/geometry/SpatialReference",
+  "esri/core/promiseUtils",
+  "esri/core/reactiveUtils"
 ], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
-   const sceneElement = document.getElementById("sceneview");
-   sceneElement.addEventListener("arcgisViewReadyChange", () => {
-     const view = sceneElement.view;
-     view.when(async () => {
-       const viewshedAnalysis = new ViewshedAnalysis();
-       view.analyses.add(viewshedAnalysis);
-       let creatingStarted = false;
-       let viewshedCounter = viewshedAnalysis.viewsheds.length;
-       const analysisView = await view.whenAnalysisView(viewshedAnalysis);
-       analysisView.interactive = true;
-       const createButton = document.getElementById("createButton");
-       const cancelButton = document.getElementById("cancelButton");
-       const toggleModeButton = document.getElementById("toggleModeButton");
-       const manualInputForm = document.getElementById("manualInputForm");
-       const addManualViewshedButton = document.getElementById("addManualViewshed");
-       const exportButton = document.getElementById("exportButton");
-       const importButton = document.getElementById("importButton");
-       const viewshedList = document.getElementById("viewshedList");
-       const viewshedListCard = document.getElementById("viewshedListCard");
-       let abortController = null;
-       let isManualMode = false;
-       // Make viewshed list draggable
-       let isDragging = false;
-       let offsetX, offsetY;
-       viewshedListCard.addEventListener("mousedown", (e) => {
-         if (e.target === viewshedListCard || e.target.closest("calcite-card-title")) {
-           isDragging = true;
-           offsetX = e.clientX - viewshedListCard.offsetLeft;
-           offsetY = e.clientY - viewshedListCard.offsetTop;
-         }
-       });
-       document.addEventListener("mousemove", (e) => {
-         if (isDragging) {
-           viewshedListCard.style.left = `${e.clientX - offsetX}px`;
-           viewshedListCard.style.top = `${e.clientY - offsetY}px`;
-         }
-       });
-       document.addEventListener("mouseup", () => {
-         isDragging = false;
-       });
-       createButton.addEventListener("click", () => {
-         startCreating();
-       });
-       toggleModeButton.addEventListener("click", () => {
-         isManualMode = !isManualMode;
-         toggleModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
-         toggleModeButton.iconStart = isManualMode ? "edit" : "cursor";
-         manualInputForm.style.display = isManualMode ? "block" : "none";
-         createButton.style.display = isManualMode ? "none" : "flex";
-         if (isManualMode) stopCreating();
-       });
-       addManualViewshedButton.addEventListener("click", () => {
-         const lat = parseFloat(document.getElementById("latInput").value);
-         const long = parseFloat(document.getElementById("longInput").value);
-         const height = parseFloat(document.getElementById("heightInput").value);
-         const angle = parseFloat(document.getElementById("angleInput").value);
-         const distance = parseFloat(document.getElementById("distanceInput").value);
-         if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
-           const manualViewshed = new Viewshed({
-             observer: {
-               spatialReference: SpatialReference.WebMercator,
-               x: long,
-               y: lat,
-               z: height
-             },
-             farDistance: distance,
-             tilt: angle,
-             heading: 0,
-             horizontalFieldOfView: 85,
-             verticalFieldOfView: 60
-           });
-           viewshedAnalysis.viewsheds.add(manualViewshed);
-           addViewshedToList(manualViewshed);
-         }
-       });
-       exportButton.addEventListener("click", () => {
-         const viewshedsData = viewshedAnalysis.viewsheds.map(viewshed => ({
-           lat: viewshed.observer.y,
-           long: viewshed.observer.x,
-           height: viewshed.observer.z,
-           angle: viewshed.tilt,
-           distance: viewshed.farDistance
-         }));
-         const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
-         const url = URL.createObjectURL(blob);
-         const a = document.createElement('a');
-         a.href = url;
-         a.download = 'viewsheds.json';
-         document.body.appendChild(a);
-         a.click();
-         document.body.removeChild(a);
-         URL.revokeObjectURL(url);
-       });
-       importButton.addEventListener("click", () => {
-         const input = document.createElement('input');
-         input.type = 'file';
-         input.accept = 'application/json';
-         input.onchange = e => {
-           const file = e.target.files[0];
-           const reader = new FileReader();
-           reader.onload = event => {
-             const viewshedsData = JSON.parse(event.target.result);
-             viewshedsData.forEach(data => {
-               const viewshed = new Viewshed({
-                 observer: {
-                   spatialReference: SpatialReference.WebMercator,
-                   x: data.long,
-                   y: data.lat,
-                   z: data.height
-                 },
-                 farDistance: data.distance,
-                 tilt: data.angle,
-                 heading: 0,
-                 horizontalFieldOfView: 85,
-                 verticalFieldOfView: 60
-               });
-               viewshedAnalysis.viewsheds.add(viewshed);
-               addViewshedToList(viewshed);
-             });
-           };
-           reader.readAsText(file);
-         };
-         input.click();
-       });
-       reactiveUtils.when(
-         () => viewshedAnalysis.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
-         () => {
-           stopCreating();
-           addViewshedToList(analysisView.selectedViewshed);
-         }
-       );
-       cancelButton.addEventListener("click", () => {
-         stopCreating();
-       });
-       view.on("key-down", (event) => {
-         if (event.key == "Escape") {
-           stopCreating();
-         }
-       });
-       function startCreating() {
-         stopCreating();
-         creatingStarted = true;
-         abortController = new AbortController();
-         updateUI();
-         analysisView
-           .createViewsheds({ signal: abortController.signal })
-           .catch((e) => {
-             if (!promiseUtils.isAbortError(e)) {
-               throw e;
-             }
-           })
-           .finally(() => {
-             updateUI();
-           });
-       }
-       function stopCreating() {
-         abortController?.abort();
-         abortController = null;
-         updateUI();
-         creatingStarted = false;
-         viewshedCounter = viewshedAnalysis.viewsheds.length;
-       }
-       function updateUI() {
-         const creating = abortController != null;
-         createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
-         cancelButton.style.display = creating ? "flex" : "none";
-       }
-       function addViewshedToList(viewshed) {
-         const item = document.createElement('div');
-         item.className = 'viewshed-item';
-         const nameInput = document.createElement('calcite-input');
-         nameInput.className = 'viewshed-name';
-         nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
-         nameInput.disabled = true;
-         const renameButton = document.createElement('calcite-button');
-         renameButton.iconStart = "pencil";
-         renameButton.addEventListener('click', () => {
-           nameInput.disabled = !nameInput.disabled;
-           if (!nameInput.disabled) nameInput.focus();
-         });
-         const hideButton = document.createElement('calcite-button');
-         hideButton.iconStart = viewshed.visible ? "eye" : "eye-closed";
-         hideButton.addEventListener('click', () => {
-           viewshed.visible = !viewshed.visible;
-           hideButton.iconStart = viewshed.visible ? "eye" : "eye-closed";
-         });
-         const removeButton = document.createElement('calcite-button');
-         removeButton.iconStart = "trash";
-         removeButton.addEventListener('click', () => {
-           viewshedAnalysis.viewsheds.remove(viewshed);
-           viewshedList.removeChild(item);
-         });
-         item.appendChild(nameInput);
-         item.appendChild(renameButton);
-         item.appendChild(hideButton);
-         item.appendChild(removeButton);
-         viewshedList.appendChild(item);
-       }
-     });
-   });
+  const sceneElement = document.getElementById("sceneview");
+  sceneElement.addEventListener("arcgisViewReadyChange", () => {
+    const view = sceneElement.view;
+    view.when(async () => {
+      const viewshedAnalysis = new ViewshedAnalysis();
+      view.analyses.add(viewshedAnalysis);
+      let creatingStarted = false;
+      let viewshedCounter = viewshedAnalysis.viewsheds.length;
+      const analysisView = await view.whenAnalysisView(viewshedAnalysis);
+      analysisView.interactive = true;
+
+      const createButton = document.getElementById("createButton");
+      const cancelButton = document.getElementById("cancelButton");
+      const toggleModeButton = document.getElementById("toggleModeButton");
+      const manualInputForm = document.getElementById("manualInputForm");
+      const addManualViewshedButton = document.getElementById("addManualViewshed");
+      const exportButton = document.getElementById("exportButton");
+      const importButton = document.getElementById("importButton");
+      const viewshedList = document.getElementById("viewshedList");
+      const viewshedListCard = document.getElementById("viewshedListCard");
+
+      let abortController = null;
+      let isManualMode = false;
+
+      // Make viewshed list draggable
+      let isDragging = false;
+      let offsetX, offsetY;
+      viewshedListCard.addEventListener("mousedown", (e) => {
+        if (e.target === viewshedListCard || e.target.closest("calcite-card-title")) {
+          isDragging = true;
+          offsetX = e.clientX - viewshedListCard.offsetLeft;
+          offsetY = e.clientY - viewshedListCard.offsetTop;
+        }
+      });
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          viewshedListCard.style.left = `${e.clientX - offsetX}px`;
+          viewshedListCard.style.top = `${e.clientY - offsetY}px`;
+        }
+      });
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      createButton.addEventListener("click", () => startCreating());
+      toggleModeButton.addEventListener("click", () => {
+        isManualMode = !isManualMode;
+        toggleModeButton.iconStart = isManualMode ? "edit" : "cursor";
+        manualInputForm.style.display = isManualMode ? "block" : "none";
+        createButton.style.display = isManualMode ? "none" : "flex";
+        if (isManualMode) stopCreating();
+      });
+      addManualViewshedButton.addEventListener("click", addManualViewshed);
+      exportButton.addEventListener("click", exportViewsheds);
+      importButton.addEventListener("click", importViewsheds);
+      cancelButton.addEventListener("click", () => stopCreating());
+      view.on("key-down", (event) => {
+        if (event.key == "Escape") stopCreating();
+      });
+
+      function startCreating() {
+        stopCreating();
+        creatingStarted = true;
+        abortController = new AbortController();
+        updateUI();
+        analysisView
+          .createViewsheds({ signal: abortController.signal })
+          .catch((e) => {
+            if (!promiseUtils.isAbortError(e)) throw e;
+          })
+          .finally(() => updateUI());
+      }
+
+      function stopCreating() {
+        abortController?.abort();
+        abortController = null;
+        updateUI();
+        creatingStarted = false;
+        viewshedCounter = viewshedAnalysis.viewsheds.length;
+      }
+
+      function updateUI() {
+        const creating = abortController != null;
+        createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
+        cancelButton.style.display = creating ? "flex" : "none";
+      }
+
+      function addManualViewshed() {
+        const lat = parseFloat(document.getElementById("latInput").value);
+        const long = parseFloat(document.getElementById("longInput").value);
+        const height = parseFloat(document.getElementById("heightInput").value);
+        const angle = parseFloat(document.getElementById("angleInput").value);
+        const distance = parseFloat(document.getElementById("distanceInput").value);
+        if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
+          const manualViewshed = new Viewshed({
+            observer: { spatialReference: SpatialReference.WebMercator, x: long, y: lat, z: height },
+            farDistance: distance,
+            tilt: angle,
+            heading: 0,
+            horizontalFieldOfView: 85,
+            verticalFieldOfView: 60
+          });
+          viewshedAnalysis.viewsheds.add(manualViewshed);
+          addViewshedToList(manualViewshed);
+        }
+      }
+
+      function exportViewsheds() {
+        const viewshedsData = viewshedAnalysis.viewsheds.map(viewshed => ({
+          lat: viewshed.observer.y,
+          long: viewshed.observer.x,
+          height: viewshed.observer.z,
+          angle: viewshed.tilt,
+          distance: viewshed.farDistance
+        }));
+        const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'viewsheds.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function importViewsheds() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = e => {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = event => {
+            const viewshedsData = JSON.parse(event.target.result);
+            viewshedsData.forEach(data => {
+              const viewshed = new Viewshed({
+                observer: { spatialReference: SpatialReference.WebMercator, x: data.long, y: data.lat, z: data.height },
+                farDistance: data.distance,
+                tilt: data.angle,
+                heading: 0,
+                horizontalFieldOfView: 85,
+                verticalFieldOfView: 60
+              });
+              viewshedAnalysis.viewsheds.add(viewshed);
+              addViewshedToList(viewshed);
+            });
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      }
+
+      function addViewshedToList(viewshed) {
+        const item = document.createElement('div');
+        item.className = 'viewshed-item';
+        const nameInput = document.createElement('calcite-input');
+        nameInput.className = 'viewshed-name';
+        nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+        nameInput.disabled = true;
+        const renameButton = document.createElement('calcite-button');
+        renameButton.iconStart = "pencil";
+        renameButton.addEventListener('click', () => {
+          nameInput.disabled = !nameInput.disabled;
+          if (!nameInput.disabled) nameInput.focus();
+        });
+        const hideButton = document.createElement('calcite-button');
+        hideButton.iconStart = viewshed.visible ? "eye" : "eye-closed";
+        hideButton.addEventListener('click', () => {
+          viewshed.visible = !viewshed.visible;
+          hideButton.iconStart = viewshed.visible ? "eye" : "eye-closed";
+        });
+        const removeButton = document.createElement('calcite-button');
+        removeButton.iconStart = "trash";
+        removeButton.addEventListener('click', () => {
+          viewshedAnalysis.viewsheds.remove(viewshed);
+          viewshedList.removeChild(item);
+        });
+        item.appendChild(nameInput);
+        item.appendChild(renameButton);
+        item.appendChild(hideButton);
+        item.appendChild(removeButton);
+        viewshedList.appendChild(item);
+      }
+    });
+  });
 });
 </script>
 </body>

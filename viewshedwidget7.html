@@ -298,10 +298,13 @@ require([
          });
          const hideButton = document.createElement('calcite-button');
          hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
-         hideButton.title = viewshed.visible ? "Hide" : "Show";
+         hideButton.title = viewshed.visible ? "Show" : "Hide";
          hideButton.addEventListener('click', () => {
+           console.log("Before toggle:", viewshed.visible); // Debugging log
            viewshed.visible = !viewshed.visible;
+           console.log("After toggle:", viewshed.visible); // Debugging log
            hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+           hideButton.title = viewshed.visible ? "Show" : "Hide";
          });
          const zoomButton = document.createElement('calcite-button');
          zoomButton.iconStart = "magnifying-glass";

@@ -297,29 +297,14 @@ require([
            if (!nameInput.disabled) nameInput.focus();
          });
          const hideButton = document.createElement('calcite-button');
-         hideButton.iconStart = "view-visible";
-         hideButton.title = "Hide";
-         // Store the viewshed in a variable
-         let viewshed = new Viewshed({
-            viewpoint: view.viewpoint,
-            // Other viewshed properties...
-         });
-         // Add the viewshed to the analysis view
-         analysisView.analyses.add(viewshed);
-         let isViewshedVisible = true; // Track visibility manually
+         hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+         hideButton.title = viewshed.visible ? "Show" : "Hide";
          hideButton.addEventListener('click', () => {
-            console.log("Before toggle:", isViewshedVisible);
-            if (isViewshedVisible) {
-                analysisView.analyses.remove(viewshed); // Hide by removing
-                hideButton.iconStart = "view-hide";
-                hideButton.title = "Show";
-            } else {
-                analysisView.analyses.add(viewshed); // Show by adding back
-                hideButton.iconStart = "view-visible";
-                hideButton.title = "Hide";
-            }
-            isViewshedVisible = !isViewshedVisible; // Update visibility state
-            console.log("After toggle:", isViewshedVisible);
+           console.log("Before toggle:", viewshed.visible); // Debugging log
+           viewshed.visible = !viewshed.visible;
+           console.log("After toggle:", viewshed.visible); // Debugging log
+           hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+           hideButton.title = viewshed.visible ? "Show" : "Hide";
          });
          const zoomButton = document.createElement('calcite-button');
          zoomButton.iconStart = "magnifying-glass";

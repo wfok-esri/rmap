@@ -162,7 +162,6 @@ require([
        toggleModeButton.addEventListener("click", () => {
          isManualMode = !isManualMode;
          toggleModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
-         toggleModeButton.iconStart = isManualMode ? "edit" : "cursor";
          manualInputForm.style.display = isManualMode ? "block" : "none";
          createButton.style.display = isManualMode ? "none" : "flex";
          if (isManualMode) stopCreating();

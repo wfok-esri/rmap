@@ -103,9 +103,7 @@ arcgis-scene {
 </calcite-card>
 <calcite-card id="viewshedListCard">
 <calcite-card-title>Viewshed List</calcite-card-title>
-<div id="viewshedList">      <arcgis-placement position="top-right">
-        <arcgis-layer-list></arcgis-layer-list>
-      </arcgis-placement></div>
+<div id="viewshedList"></div>
 </calcite-card>
 <script>
 require([
@@ -298,7 +296,6 @@ require([
            nameInput.disabled = !nameInput.disabled;
            if (!nameInput.disabled) nameInput.focus();
          });
-         //Hide/Show Button
          const hideButton = document.createElement('calcite-button');
          let isViewshedVisible = true; // Custom flag to track visibility
          hideButton.iconStart = isViewshedVisible ? "view-visible" : "view-hide";
@@ -317,9 +314,6 @@ require([
              hideButton.iconStart = isViewshedVisible ? "view-visible" : "view-hide";
              hideButton.title = isViewshedVisible ? "Hide" : "Show";
          });
-         // Assuming `view` is your SceneView or MapView instance
-         // and `viewshed` is your Viewshed instance
-         
          const zoomButton = document.createElement('calcite-button');
          zoomButton.iconStart = "magnifying-glass";
          zoomButton.title = "Zoom To"; 

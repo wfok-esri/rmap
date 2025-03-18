@@ -133,8 +133,8 @@ require([
  "esri/core/promiseUtils",
  "esri/core/reactiveUtils",
  "esri/Color",
- "esri/geometry/geometryEngine"
-], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils, Color, geometryEngine) => {
+ "esri/geometry/operators/intersectsOperator"
+], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils, Color, intersectsOperator) => {
  const sceneElement = document.getElementById("sceneview");
  sceneElement.addEventListener("arcgisViewReadyChange", () => {
    const view = sceneElement.view;
@@ -381,7 +381,7 @@ require([
        const geometry2 = viewshed2.geometry;
 
        // Check if the geometries intersect
-       return geometryEngine.intersects(geometry1, geometry2);
+       return intersectsOperator.execute(geometry1, geometry2);
      }
    });
  });

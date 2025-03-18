@@ -323,13 +323,28 @@ require([
          nameInput.disabled = !nameInput.disabled;
          if (!nameInput.disabled) nameInput.focus();
        });
+       // const hideButton = document.createElement('calcite-button');
+       // hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+       // hideButton.title = viewshed.visible ? "Show" : "Hide";
+       // hideButton.addEventListener('click', () => {
+       //   viewshed.visible = !viewshed.visible;
+       //   hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+       //   hideButton.title = viewshed.visible ? "Show" : "Hide";
+       // });
        const hideButton = document.createElement('calcite-button');
        hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
        hideButton.title = viewshed.visible ? "Show" : "Hide";
        hideButton.addEventListener('click', () => {
-         viewshed.visible = !viewshed.visible;
-         hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
-         hideButton.title = viewshed.visible ? "Show" : "Hide";
+         // Toggle visibility by setting the color opacity
+         if (viewshed.color.a === 0) {
+           viewshed.color.a = 0.5; // Restore original opacity
+           hideButton.iconStart = "view-visible";
+           hideButton.title = "Hide";
+         } else {
+           viewshed.color.a = 0; // Set opacity to 0 to hide
+           hideButton.iconStart = "view-hide";
+           hideButton.title = "Show";
+         }
        });
        const zoomButton = document.createElement('calcite-button');
        zoomButton.iconStart = "magnifying-glass";

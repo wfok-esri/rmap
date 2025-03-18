@@ -369,15 +369,15 @@
           }
          function updateOverlapGraphics() {
            overlapLayer.removeAll();
-
            if (viewshedAnalysis.viewsheds.length < 2) return;
-
-           // Get the geometries of all viewsheds
-           const geometries = viewshedAnalysis.viewsheds.map(v => v.geometry);
-
-           // Find overlapping areas
-           const overlapGeometry = geometryEngine.intersect(geometries);
-
+           // Get the visible areas of all viewsheds
+           const visibleAreas = viewshedAnalysis.viewsheds.map(v => v.visibleArea);
+           // Compute the intersection of visible areas
+           let overlapGeometry = visibleAreas[0];
+           for (let i = 1; i < visibleAreas.length; i++) {
+             overlapGeometry = geometryEngine.intersect(overlapGeometry, visibleAreas[i]);
+             if (!overlapGeometry) break; // No intersection found
+           }
            if (overlapGeometry) {
              const overlapGraphic = new Graphic({
                geometry: overlapGeometry,
@@ -392,9 +392,9 @@
              overlapLayer.add(overlapGraphic);
            }
          }
-        });
-      });
-    });
+       });
+     });
+   });
   </script>
 </body>
 </html>

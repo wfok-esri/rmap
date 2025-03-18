@@ -131,14 +131,25 @@
       "esri/analysis/Viewshed",
       "esri/geometry/SpatialReference",
       "esri/core/promiseUtils",
-      "esri/core/reactiveUtils"
-    ], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
+      "esri/core/reactiveUtils",
+      "esri/layers/GraphicsLayer",
+      "esri/Graphic",
+      "esri/symbols/SimpleFillSymbol",
+      "esri/symbols/SimpleLineSymbol",
+      "esri/geometry/geometryEngine"
+    ], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils,
+     GraphicsLayer, Graphic, SimpleFillSymbol, SimpleLineSymbol, geometryEngine) => {
       const sceneElement = document.getElementById("sceneview");
       sceneElement.addEventListener("arcgisViewReadyChange", () => {
         const view = sceneElement.view;
         view.when(async () => {
           const viewshedAnalysis = new ViewshedAnalysis();
           view.analyses.add(viewshedAnalysis);
+
+          // Add a graphics layer to highlight overlapping areas
+          const overlapLayer = new GraphicsLayer();
+          view.map.add(overlapLayer);
+          
           let creatingStarted = false;
           let viewshedCounter = viewshedAnalysis.viewsheds.length;
           const analysisView = await view.whenAnalysisView(viewshedAnalysis);
@@ -205,6 +216,7 @@
               });
               viewshedAnalysis.viewsheds.add(manualViewshed);
               addViewshedToList(manualViewshed);
+              updateOverlapGraphics();
             }
           });
           exportButton.addEventListener("click", () => {
@@ -261,6 +273,7 @@
             () => {
               stopCreating();
               addViewshedToList(analysisView.selectedViewshed);
+              updateOverlapGraphics();
             }
           );
           cancelButton.addEventListener("click", () => {
@@ -322,6 +335,7 @@
               console.log("After toggle:", viewshed.visible); // Debugging log
               hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
               hideButton.title = viewshed.visible ? "Show" : "Hide";
+              updateOverlapGraphics();
             });
             const zoomButton = document.createElement('calcite-button');
             zoomButton.iconStart = "magnifying-glass";
@@ -353,6 +367,31 @@
             item.appendChild(removeButton);
             viewshedList.appendChild(item);
           }
+         function updateOverlapGraphics() {
+           overlapLayer.removeAll();
+
+           if (viewshedAnalysis.viewsheds.length < 2) return;
+
+           // Get the geometries of all viewsheds
+           const geometries = viewshedAnalysis.viewsheds.map(v => v.geometry);
+
+           // Find overlapping areas
+           const overlapGeometry = geometryEngine.intersect(geometries);
+
+           if (overlapGeometry) {
+             const overlapGraphic = new Graphic({
+               geometry: overlapGeometry,
+               symbol: new SimpleFillSymbol({
+                 color: [255, 0, 0, 0.5], // Red color for overlapping areas
+                 outline: new SimpleLineSymbol({
+                   color: [255, 0, 0],
+                   width: 2
+                 })
+               })
+             });
+             overlapLayer.add(overlapGraphic);
+           }
+         }
         });
       });
     });

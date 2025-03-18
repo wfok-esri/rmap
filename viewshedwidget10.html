@@ -213,6 +213,7 @@ require([
           });
           viewshedAnalysis.viewsheds.add(manualViewshed);
           addViewshedToList(manualViewshed);
+          checkOverlap(manualViewshed);
         }
       });
       exportButton.addEventListener("click", () => {
@@ -260,6 +261,7 @@ require([
               });
               viewshedAnalysis.viewsheds.add(viewshed);
               addViewshedToList(viewshed);
+              checkOverlap(viewshed);
             });
           };
           reader.readAsText(file);
@@ -271,6 +273,7 @@ require([
         () => {
           stopCreating();
           addViewshedToList(analysisView.selectedViewshed);
+          checkOverlap(analysisView.selectedViewshed);
         }
       );
       cancelButton.addEventListener("click", () => {
@@ -364,6 +367,27 @@ require([
         item.appendChild(zoomButton);
         item.appendChild(removeButton);
         viewshedList.appendChild(item);
+      }
+
+      function checkOverlap(newViewshed) {
+        viewshedAnalysis.viewsheds.forEach(viewshed => {
+          if (viewshed !== newViewshed) {
+            // Logic to check if viewsheds overlap
+            // You may need to implement a custom function to detect overlap
+            const overlapDetected = detectOverlap(viewshed, newViewshed);
+            if (overlapDetected) {
+              viewshed.color = overlapColor;
+              newViewshed.color = overlapColor;
+            }
+          }
+        });
+      }
+
+      function detectOverlap(viewshed1, viewshed2) {
+        // Implement your overlap detection logic here
+        // This is a placeholder function and should be replaced with actual logic
+        // You can use geometry operations to check for overlap
+        return false; // Replace this with actual overlap detection result
       }
     });
   });

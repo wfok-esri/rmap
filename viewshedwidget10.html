@@ -124,273 +124,267 @@
   </calcite-card>
   <script>
 require([
-  "esri/WebScene",
-  "esri/Camera",
-  "esri/views/SceneView",
-  "esri/analysis/ViewshedAnalysis",
-  "esri/analysis/Viewshed",
-  "esri/geometry/SpatialReference",
-  "esri/core/promiseUtils",
-  "esri/core/reactiveUtils",
-  "esri/Color"
-], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils, Color) => {
-  const sceneElement = document.getElementById("sceneview");
-  sceneElement.addEventListener("arcgisViewReadyChange", () => {
-    const view = sceneElement.view;
-    view.when(async () => {
-      const viewshedAnalysis = new ViewshedAnalysis();
-      view.analyses.add(viewshedAnalysis);
-      let creatingStarted = false;
-      let viewshedCounter = viewshedAnalysis.viewsheds.length;
-      const analysisView = await view.whenAnalysisView(viewshedAnalysis);
-      analysisView.interactive = true;
-      const createButton = document.getElementById("createButton");
-      const cancelButton = document.getElementById("cancelButton");
-      const toggleModeButton = document.getElementById("toggleModeButton");
-      const manualInputForm = document.getElementById("manualInputForm");
-      const addManualViewshedButton = document.getElementById("addManualViewshed");
-      const exportButton = document.getElementById("exportButton");
-      const importButton = document.getElementById("importButton");
-      const viewshedList = document.getElementById("viewshedList");
-      const viewshedListCard = document.getElementById("viewshedListCard");
-      let abortController = null;
-      let isManualMode = false;
+ "esri/WebScene",
+ "esri/Camera",
+ "esri/views/SceneView",
+ "esri/analysis/ViewshedAnalysis",
+ "esri/analysis/Viewshed",
+ "esri/geometry/SpatialReference",
+ "esri/core/promiseUtils",
+ "esri/core/reactiveUtils",
+ "esri/Color",
+ "esri/geometry/geometryEngine"
+], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils, Color, geometryEngine) => {
+ const sceneElement = document.getElementById("sceneview");
+ sceneElement.addEventListener("arcgisViewReadyChange", () => {
+   const view = sceneElement.view;
+   view.when(async () => {
+     const viewshedAnalysis = new ViewshedAnalysis();
+     view.analyses.add(viewshedAnalysis);
+     let creatingStarted = false;
+     let viewshedCounter = viewshedAnalysis.viewsheds.length;
+     const analysisView = await view.whenAnalysisView(viewshedAnalysis);
+     analysisView.interactive = true;
+     const createButton = document.getElementById("createButton");
+     const cancelButton = document.getElementById("cancelButton");
+     const toggleModeButton = document.getElementById("toggleModeButton");
+     const manualInputForm = document.getElementById("manualInputForm");
+     const addManualViewshedButton = document.getElementById("addManualViewshed");
+     const exportButton = document.getElementById("exportButton");
+     const importButton = document.getElementById("importButton");
+     const viewshedList = document.getElementById("viewshedList");
+     const viewshedListCard = document.getElementById("viewshedListCard");
+     let abortController = null;
+     let isManualMode = false;
+     const viewshedColor = new Color([255, 0, 0, 0.5]);
+     const overlapColor = new Color([0, 0, 255, 0.5]);
+     let isDragging = false;
+     let offsetX, offsetY;
+     viewshedListCard.addEventListener("mousedown", (e) => {
+       if (e.target === viewshedListCard || e.target.closest("calcite-card-title")) {
+         isDragging = true;
+         offsetX = e.clientX - viewshedListCard.offsetLeft;
+         offsetY = e.clientY - viewshedListCard.offsetTop;
+       }
+     });
+     document.addEventListener("mousemove", (e) => {
+       if (isDragging) {
+         viewshedListCard.style.left = `${e.clientX - offsetX}px`;
+         viewshedListCard.style.top = `${e.clientY - offsetY}px`;
+       }
+     });
+     document.addEventListener("mouseup", () => {
+       isDragging = false;
+     });
+     createButton.addEventListener("click", () => {
+       startCreating();
+     });
+     toggleModeButton.addEventListener("click", () => {
+       isManualMode = !isManualMode;
+       toggleModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
+       manualInputForm.style.display = isManualMode ? "block" : "none";
+       createButton.style.display = isManualMode ? "none" : "flex";
+       if (isManualMode) stopCreating();
+     });
+     addManualViewshedButton.addEventListener("click", () => {
+       const lat = parseFloat(document.getElementById("latInput").value);
+       const long = parseFloat(document.getElementById("longInput").value);
+       const height = parseFloat(document.getElementById("heightInput").value);
+       const angle = parseFloat(document.getElementById("angleInput").value);
+       const distance = parseFloat(document.getElementById("distanceInput").value);
+       if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
+         const manualViewshed = new Viewshed({
+           observer: {
+             spatialReference: SpatialReference.WebMercator,
+             x: long,
+             y: lat,
+             z: height
+           },
+           farDistance: distance,
+           tilt: angle,
+           heading: 0,
+           horizontalFieldOfView: 85,
+           verticalFieldOfView: 60,
+           color: viewshedColor,
+           overlapColor: overlapColor
+         });
+         viewshedAnalysis.viewsheds.add(manualViewshed);
+         addViewshedToList(manualViewshed);
+         checkOverlap(manualViewshed);
+       }
+     });
+     exportButton.addEventListener("click", () => {
+       const viewshedsData = viewshedAnalysis.viewsheds.map(viewshed => ({
+         lat: viewshed.observer.y,
+         long: viewshed.observer.x,
+         height: viewshed.observer.z,
+         angle: viewshed.tilt,
+         distance: viewshed.farDistance
+       }));
+       const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url;
+       a.download = 'viewsheds.json';
+       document.body.appendChild(a);
+       a.click();
+       document.body.removeChild(a);
+       URL.revokeObjectURL(url);
+     });
+     importButton.addEventListener("click", () => {
+       const input = document.createElement('input');
+       input.type = 'file';
+       input.accept = 'application/json';
+       input.onchange = e => {
+         const file = e.target.files[0];
+         const reader = new FileReader();
+         reader.onload = event => {
+           const viewshedsData = JSON.parse(event.target.result);
+           viewshedsData.forEach(data => {
+             const viewshed = new Viewshed({
+               observer: {
+                 spatialReference: SpatialReference.WebMercator,
+                 x: data.long,
+                 y: data.lat,
+                 z: data.height
+               },
+               farDistance: data.distance,
+               tilt: data.angle,
+               heading: 0,
+               horizontalFieldOfView: 85,
+               verticalFieldOfView: 60,
+               color: viewshedColor,
+               overlapColor: overlapColor
+             });
+             viewshedAnalysis.viewsheds.add(viewshed);
+             addViewshedToList(viewshed);
+             checkOverlap(viewshed);
+           });
+         };
+         reader.readAsText(file);
+       };
+       input.click();
+     });
+     reactiveUtils.when(
+       () => viewshedAnalysis.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
+       () => {
+         stopCreating();
+         addViewshedToList(analysisView.selectedViewshed);
+         checkOverlap(analysisView.selectedViewshed);
+       }
+     );
+     cancelButton.addEventListener("click", () => {
+       stopCreating();
+     });
+     view.on("key-down", (event) => {
+       if (event.key == "Escape") {
+         stopCreating();
+       }
+     });
+     function startCreating() {
+       stopCreating();
+       creatingStarted = true;
+       abortController = new AbortController();
+       updateUI();
+       analysisView
+         .createViewsheds({ signal: abortController.signal })
+         .catch((e) => {
+           if (!promiseUtils.isAbortError(e)) {
+             throw e;
+           }
+         })
+         .finally(() => {
+           updateUI();
+         });
+     }
+     function stopCreating() {
+       abortController?.abort();
+       abortController = null;
+       updateUI();
+       creatingStarted = false;
+       viewshedCounter = viewshedAnalysis.viewsheds.length;
+     }
+     function updateUI() {
+       const creating = abortController != null;
+       createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
+       cancelButton.style.display = creating ? "flex" : "none";
+     }
+     function addViewshedToList(viewshed) {
+       const item = document.createElement('div');
+       item.className = 'viewshed-item';
+       const nameInput = document.createElement('calcite-input');
+       nameInput.className = 'viewshed-name';
+       nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+       nameInput.disabled = true;
+       const renameButton = document.createElement('calcite-button');
+       renameButton.iconStart = "pencil";
+       renameButton.title = "Rename";
+       renameButton.addEventListener('click', () => {
+         nameInput.disabled = !nameInput.disabled;
+         if (!nameInput.disabled) nameInput.focus();
+       });
+       const hideButton = document.createElement('calcite-button');
+       hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+       hideButton.title = viewshed.visible ? "Show" : "Hide";
+       hideButton.addEventListener('click', () => {
+         viewshed.visible = !viewshed.visible;
+         hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+         hideButton.title = viewshed.visible ? "Show" : "Hide";
+       });
+       const zoomButton = document.createElement('calcite-button');
+       zoomButton.iconStart = "magnifying-glass";
+       zoomButton.title = "Zoom To";
+       zoomButton.addEventListener('click', () => {
+         const camera = new Camera({
+           position: {
+             spatialReference: SpatialReference.WebMercator,
+             x: viewshed.observer.x,
+             y: viewshed.observer.y,
+             z: viewshed.observer.z + 1000 // Adjust the height as needed
+           },
+           tilt: 0,
+           heading: 0
+         });
+         view.goTo(camera);
+       });
+       const removeButton = document.createElement('calcite-button');
+       removeButton.iconStart = "trash";
+       removeButton.title = "Remove";
+       removeButton.addEventListener('click', () => {
+         viewshedAnalysis.viewsheds.remove(viewshed);
+         viewshedList.removeChild(item);
+       });
+       item.appendChild(nameInput);
+       item.appendChild(renameButton);
+       item.appendChild(hideButton);
+       item.appendChild(zoomButton);
+       item.appendChild(removeButton);
+       viewshedList.appendChild(item);
+     }
+     function checkOverlap(newViewshed) {
+       viewshedAnalysis.viewsheds.forEach(viewshed => {
+         if (viewshed !== newViewshed) {
+           const overlapDetected = detectOverlap(viewshed, newViewshed);
+           if (overlapDetected) {
+             viewshed.color = overlapColor;
+             newViewshed.color = overlapColor;
+           } else {
+             viewshed.color = viewshedColor;
+             newViewshed.color = viewshedColor;
+           }
+         }
+       });
+     }
+     function detectOverlap(viewshed1, viewshed2) {
+       // Get the geometries of the viewsheds
+       const geometry1 = viewshed1.geometry;
+       const geometry2 = viewshed2.geometry;
 
-      // Define colors
-      const viewshedColor = new Color([255, 0, 0, 0.5]); // Red with 50% opacity
-      const overlapColor = new Color([0, 0, 255, 0.5]); // Blue with 50% opacity
-
-      // Make viewshed list draggable
-      let isDragging = false;
-      let offsetX, offsetY;
-      viewshedListCard.addEventListener("mousedown", (e) => {
-        if (e.target === viewshedListCard || e.target.closest("calcite-card-title")) {
-          isDragging = true;
-          offsetX = e.clientX - viewshedListCard.offsetLeft;
-          offsetY = e.clientY - viewshedListCard.offsetTop;
-        }
-      });
-      document.addEventListener("mousemove", (e) => {
-        if (isDragging) {
-          viewshedListCard.style.left = `${e.clientX - offsetX}px`;
-          viewshedListCard.style.top = `${e.clientY - offsetY}px`;
-        }
-      });
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-      });
-      createButton.addEventListener("click", () => {
-        startCreating();
-      });
-      toggleModeButton.addEventListener("click", () => {
-        isManualMode = !isManualMode;
-        toggleModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
-        manualInputForm.style.display = isManualMode ? "block" : "none";
-        createButton.style.display = isManualMode ? "none" : "flex";
-        if (isManualMode) stopCreating();
-      });
-      addManualViewshedButton.addEventListener("click", () => {
-        const lat = parseFloat(document.getElementById("latInput").value);
-        const long = parseFloat(document.getElementById("longInput").value);
-        const height = parseFloat(document.getElementById("heightInput").value);
-        const angle = parseFloat(document.getElementById("angleInput").value);
-        const distance = parseFloat(document.getElementById("distanceInput").value);
-        if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
-          const manualViewshed = new Viewshed({
-            observer: {
-              spatialReference: SpatialReference.WebMercator,
-              x: long,
-              y: lat,
-              z: height
-            },
-            farDistance: distance,
-            tilt: angle,
-            heading: 0,
-            horizontalFieldOfView: 85,
-            verticalFieldOfView: 60,
-            color: viewshedColor,
-            overlapColor: overlapColor
-          });
-          viewshedAnalysis.viewsheds.add(manualViewshed);
-          addViewshedToList(manualViewshed);
-          checkOverlap(manualViewshed);
-        }
-      });
-      exportButton.addEventListener("click", () => {
-        const viewshedsData = viewshedAnalysis.viewsheds.map(viewshed => ({
-          lat: viewshed.observer.y,
-          long: viewshed.observer.x,
-          height: viewshed.observer.z,
-          angle: viewshed.tilt,
-          distance: viewshed.farDistance
-        }));
-        const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'viewsheds.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      });
-      importButton.addEventListener("click", () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'application/json';
-        input.onchange = e => {
-          const file = e.target.files[0];
-          const reader = new FileReader();
-          reader.onload = event => {
-            const viewshedsData = JSON.parse(event.target.result);
-            viewshedsData.forEach(data => {
-              const viewshed = new Viewshed({
-                observer: {
-                  spatialReference: SpatialReference.WebMercator,
-                  x: data.long,
-                  y: data.lat,
-                  z: data.height
-                },
-                farDistance: data.distance,
-                tilt: data.angle,
-                heading: 0,
-                horizontalFieldOfView: 85,
-                verticalFieldOfView: 60,
-                color: viewshedColor,
-                overlapColor: overlapColor
-              });
-              viewshedAnalysis.viewsheds.add(viewshed);
-              addViewshedToList(viewshed);
-              checkOverlap(viewshed);
-            });
-          };
-          reader.readAsText(file);
-        };
-        input.click();
-      });
-      reactiveUtils.when(
-        () => viewshedAnalysis.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
-        () => {
-          stopCreating();
-          addViewshedToList(analysisView.selectedViewshed);
-          checkOverlap(analysisView.selectedViewshed);
-        }
-      );
-      cancelButton.addEventListener("click", () => {
-        stopCreating();
-      });
-      view.on("key-down", (event) => {
-        if (event.key == "Escape") {
-          stopCreating();
-        }
-      });
-
-      function startCreating() {
-        stopCreating();
-        creatingStarted = true;
-        abortController = new AbortController();
-        updateUI();
-        analysisView
-          .createViewsheds({ signal: abortController.signal })
-          .catch((e) => {
-            if (!promiseUtils.isAbortError(e)) {
-              throw e;
-            }
-          })
-          .finally(() => {
-            updateUI();
-          });
-      }
-
-      function stopCreating() {
-        abortController?.abort();
-        abortController = null;
-        updateUI();
-        creatingStarted = false;
-        viewshedCounter = viewshedAnalysis.viewsheds.length;
-      }
-
-      function updateUI() {
-        const creating = abortController != null;
-        createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
-        cancelButton.style.display = creating ? "flex" : "none";
-      }
-
-      function addViewshedToList(viewshed) {
-        const item = document.createElement('div');
-        item.className = 'viewshed-item';
-        const nameInput = document.createElement('calcite-input');
-        nameInput.className = 'viewshed-name';
-        nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
-        nameInput.disabled = true;
-        const renameButton = document.createElement('calcite-button');
-        renameButton.iconStart = "pencil";
-        renameButton.title = "Rename";
-        renameButton.addEventListener('click', () => {
-          nameInput.disabled = !nameInput.disabled;
-          if (!nameInput.disabled) nameInput.focus();
-        });
-        const hideButton = document.createElement('calcite-button');
-        hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
-        hideButton.title = viewshed.visible ? "Show" : "Hide";
-        hideButton.addEventListener('click', () => {
-          viewshed.visible = !viewshed.visible;
-          hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
-          hideButton.title = viewshed.visible ? "Show" : "Hide";
-        });
-        const zoomButton = document.createElement('calcite-button');
-        zoomButton.iconStart = "magnifying-glass";
-        zoomButton.title = "Zoom To";
-        zoomButton.addEventListener('click', () => {
-          const camera = new Camera({
-            position: {
-              spatialReference: SpatialReference.WebMercator,
-              x: viewshed.observer.x,
-              y: viewshed.observer.y,
-              z: viewshed.observer.z + 1000 // Adjust the height as needed
-            },
-            tilt: 0,
-            heading: 0
-          });
-          view.goTo(camera);
-        });
-        const removeButton = document.createElement('calcite-button');
-        removeButton.iconStart = "trash";
-        removeButton.title = "Remove";
-        removeButton.addEventListener('click', () => {
-          viewshedAnalysis.viewsheds.remove(viewshed);
-          viewshedList.removeChild(item);
-        });
-        item.appendChild(nameInput);
-        item.appendChild(renameButton);
-        item.appendChild(hideButton);
-        item.appendChild(zoomButton);
-        item.appendChild(removeButton);
-        viewshedList.appendChild(item);
-      }
-
-      function checkOverlap(newViewshed) {
-        viewshedAnalysis.viewsheds.forEach(viewshed => {
-          if (viewshed !== newViewshed) {
-            // Logic to check if viewsheds overlap
-            // You may need to implement a custom function to detect overlap
-            const overlapDetected = detectOverlap(viewshed, newViewshed);
-            if (overlapDetected) {
-              viewshed.color = overlapColor;
-              newViewshed.color = overlapColor;
-            }
-          }
-        });
-      }
-
-      function detectOverlap(viewshed1, viewshed2) {
-        // Implement your overlap detection logic here
-        // This is a placeholder function and should be replaced with actual logic
-        // You can use geometry operations to check for overlap
-        return false; // Replace this with actual overlap detection result
-      }
-    });
-  });
+       // Check if the geometries intersect
+       return geometryEngine.intersects(geometry1, geometry2);
+     }
+   });
+ });
 });
   </script>
 </body>

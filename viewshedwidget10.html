@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+ <title>Custom Viewshed Widget</title>
+ <style>
+   /* Your existing styles */
+ </style>
+ <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+ <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+ <script src="https://js.arcgis.com/4.31/"></script>
+ <script type="module" src="https://js.arcgis.com/map-components/4.31/arcgis-map-components.esm.js"></script>
+</head>
+<body>
+ <arcgis-scene id="sceneview" item-id="ea0dff6e8e3b442a9fe37560ee16f830">
+   <arcgis-zoom position="top-left"></arcgis-zoom>
+   <arcgis-navigation-toggle position="top-left"></arcgis-navigation-toggle>
+   <arcgis-compass position="top-left"></arcgis-compass>
+ </arcgis-scene>
+ <div id="previewContainer"></div>
+ <calcite-card id="viewshedControls">
+   <calcite-button id="createButton">Create Viewshed</calcite-button>
+   <calcite-button id="cancelButton" style="display: none">Cancel</calcite-button>
+   <calcite-button id="toggleModeButton">Switch to Manual Input</calcite-button>
+   <div id="manualInputForm">
+     <calcite-input id="latInput" placeholder="Latitude"></calcite-input>
+     <calcite-input id="longInput" placeholder="Longitude"></calcite-input>
+     <calcite-input id="heightInput" placeholder="Height"></calcite-input>
+     <calcite-input id="angleInput" placeholder="View Angle"></calcite-input>
+     <calcite-input id="distanceInput" placeholder="Distance"></calcite-input>
+     <calcite-button id="addManualViewshed">Add Viewshed</calcite-button>
+   </div>
+   <calcite-button id="exportButton">Export Viewsheds</calcite-button>
+   <calcite-button id="importButton">Import Viewsheds</calcite-button>
+ </calcite-card>
+ <calcite-card id="viewshedListCard">
+   <calcite-card-title>Viewshed List</calcite-card-title>
+   <div id="viewshedList"></div>
+ </calcite-card>
+ <script>
+   require([
+     "esri/WebScene",
+     "esri/Camera",
+     "esri/views/SceneView",
+     "esri/analysis/ViewshedAnalysis",
+     "esri/analysis/Viewshed",
+     "esri/geometry/SpatialReference",
+     "esri/core/promiseUtils",
+     "esri/core/reactiveUtils"
+   ], (WebScene, Camera, SceneView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
+     const sceneElement = document.getElementById("sceneview");
+     sceneElement.addEventListener("arcgisViewReadyChange", () => {
+       const view = sceneElement.view;
+       view.when(async () => {
+         const viewshedAnalysis = new ViewshedAnalysis();
+         view.analyses.add(viewshedAnalysis);
+         let creatingStarted = false;
+         let viewshedCounter = viewshedAnalysis.viewsheds.length;
+         const analysisView = await view.whenAnalysisView(viewshedAnalysis);
+         analysisView.interactive = true;
+
+         // Define custom colors
+         const colors = ["red", "green", "blue", "yellow", "purple"];
+         const overlapColor = "orange"; // Color for overlapping areas
+
+         // Function to update viewshed colors
+         const updateViewshedColors = () => {
+           viewshedAnalysis.viewsheds.forEach((viewshed, index) => {
+             viewshed.color = colors[index % colors.length]; // Assign a unique color
+           });
+         };
+
+         // Function to detect overlaps and apply overlap color
+         const highlightOverlaps = () => {
+           const viewsheds = viewshedAnalysis.viewsheds.toArray();
+           viewsheds.forEach((viewshed, i) => {
+             viewshed.color = colors[i % colors.length]; // Reset to original color
+           });
+
+           // Check for overlaps (this is a simplified example)
+           for (let i = 0; i < viewsheds.length; i++) {
+             for (let j = i + 1; j < viewsheds.length; j++) {
+               const vs1 = viewsheds[i];
+               const vs2 = viewsheds[j];
+               if (vs1.observer.x === vs2.observer.x && vs1.observer.y === vs2.observer.y) {
+                 vs1.color = overlapColor;
+                 vs2.color = overlapColor;
+               }
+             }
+           }
+         };
+
+         // Update colors when viewsheds are added or removed
+         reactiveUtils.watch(
+           () => viewshedAnalysis.viewsheds.length,
+           () => {
+             updateViewshedColors();
+             highlightOverlaps();
+           }
+         );
+
+         // Your existing event listeners and functions
+         const createButton = document.getElementById("createButton");
+         const cancelButton = document.getElementById("cancelButton");
+         const toggleModeButton = document.getElementById("toggleModeButton");
+         const manualInputForm = document.getElementById("manualInputForm");
+         const addManualViewshedButton = document.getElementById("addManualViewshed");
+         const exportButton = document.getElementById("exportButton");
+         const importButton = document.getElementById("importButton");
+         const viewshedList = document.getElementById("viewshedList");
+         const viewshedListCard = document.getElementById("viewshedListCard");
+
+         // Your existing code for creating, canceling, and managing viewsheds
+         // ...
+
+         // Add viewshed to list and update colors
+         const addViewshedToList = (viewshed) => {
+           const item = document.createElement('div');
+           item.className = 'viewshed-item';
+           const nameInput = document.createElement('calcite-input');
+           nameInput.className = 'viewshed-name';
+           nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+           nameInput.disabled = true;
+           const renameButton = document.createElement('calcite-button');
+           renameButton.iconStart = "pencil";
+           renameButton.title = "Rename";
+           renameButton.addEventListener('click', () => {
+             nameInput.disabled = !nameInput.disabled;
+             if (!nameInput.disabled) nameInput.focus();
+           });
+           const hideButton = document.createElement('calcite-button');
+           hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+           hideButton.title = viewshed.visible ? "Show" : "Hide";
+           hideButton.addEventListener('click', () => {
+             viewshed.visible = !viewshed.visible;
+             hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
+             hideButton.title = viewshed.visible ? "Show" : "Hide";
+           });
+           const zoomButton = document.createElement('calcite-button');
+           zoomButton.iconStart = "magnifying-glass";
+           zoomButton.title = "Zoom To";
+           zoomButton.addEventListener('click', () => {
+             const camera = new Camera({
+               position: {
+                 spatialReference: SpatialReference.WebMercator,
+                 x: viewshed.observer.x,
+                 y: viewshed.observer.y,
+                 z: viewshed.observer.z + 1000
+               },
+               tilt: 0,
+               heading: 0
+             });
+             view.goTo(camera);
+           });
+           const removeButton = document.createElement('calcite-button');
+           removeButton.iconStart = "trash";
+           removeButton.title = "Remove";
+           removeButton.addEventListener('click', () => {
+             viewshedAnalysis.viewsheds.remove(viewshed);
+             viewshedList.removeChild(item);
+             highlightOverlaps(); // Update colors after removal
+           });
+           item.appendChild(nameInput);
+           item.appendChild(renameButton);
+           item.appendChild(hideButton);
+           item.appendChild(zoomButton);
+           item.appendChild(removeButton);
+           viewshedList.appendChild(item);
+           updateViewshedColors();
+           highlightOverlaps();
+         };
+       });
+     });
+   });
+ </script>
+</body>
+</html>

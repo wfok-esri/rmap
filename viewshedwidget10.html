@@ -379,33 +379,77 @@ require([
        item.appendChild(removeButton);
        viewshedList.appendChild(item);
      }
-     function checkOverlap(newViewshed) {
-       viewshedAnalysis.viewsheds.forEach(viewshed => {
-         if (viewshed !== newViewshed) {
-           console.log("viewshed:", viewshed);
-           console.log("newViewshed:", newViewshed);
-           console.log("detectOverlap(viewshed, newViewshed):", detectOverlap(viewshed, newViewshed));
-           const overlapDetected = detectOverlap(viewshed, newViewshed);
-           if (overlapDetected) {
-             viewshed.color = overlapColor;
-             newViewshed.color = overlapColor;
-           } else {
-             viewshed.color = viewshedColor;
-             newViewshed.color = viewshedColor;
-           }
+     // function checkOverlap(newViewshed) {
+     //   viewshedAnalysis.viewsheds.forEach(viewshed => {
+     //     if (viewshed !== newViewshed) {
+     //       console.log("viewshed:", viewshed);
+     //       console.log("newViewshed:", newViewshed);
+     //       console.log("detectOverlap(viewshed, newViewshed):", detectOverlap(viewshed, newViewshed));
+     //       const overlapDetected = detectOverlap(viewshed, newViewshed);
+     //       if (overlapDetected) {
+     //         viewshed.color = overlapColor;
+     //         newViewshed.color = overlapColor;
+     //       } else {
+     //         viewshed.color = viewshedColor;
+     //         newViewshed.color = viewshedColor;
+     //       }
+     //     }
+     //   });
+     // }
+     // function detectOverlap(viewshed1, viewshed2) {
+     //   // Get the geometries of the viewsheds
+     //   const geometry1 = viewshed1.observer;
+     //   const geometry2 = viewshed2.geometry;
+     //   console.log("viewshed1.geometry:", viewshed1.geometry);
+     //   console.log("viewshed2.geometry:", viewshed2.geometry);
+     //   // Check if the geometries intersect
+     //   return intersectsOperator.execute(geometry1, geometry2);
+     //   console.log("intersectsOperator.execute(geometry1, geometry2):", intersectsOperator.execute(geometry1, geometry2));
+     // }
+     function getViewshedExtent(viewshed) {
+     const { x, y } = viewshed.observer;
+     console.log("viewshed.observer:", viewshed.observer);
+     const farDistance = viewshed.farDistance;
+     console.log("viewshed.farDistance:", viewshed.farDistance);
+     return {
+       xmin: x - farDistance,
+       ymin: y - farDistance,
+       xmax: x + farDistance,
+       ymax: y + farDistance,
+     };
+    }
+    function extentsOverlap(extent1, extent2) {
+     return (
+       extent1.xmin < extent2.xmax &&
+       extent1.xmax > extent2.xmin &&
+       extent1.ymin < extent2.ymax &&
+       extent1.ymax > extent2.ymin
+     );
+    }
+    function detectOverlap(viewshed1, viewshed2) {
+     const extent1 = getViewshedExtent(viewshed1);
+     const extent2 = getViewshedExtent(viewshed2);
+     console.log("extent1:", extent1);
+     console.log("extent2:", extent2);
+     return extentsOverlap(extent1, extent2);
+    }
+    function checkOverlap(newViewshed) {
+     viewshedAnalysis.viewsheds.forEach(viewshed => {
+       if (viewshed !== newViewshed) {
+         console.log("viewshed:", viewshed);
+         console.log("newViewshed:", newViewshed);
+         console.log("detectOverlap(viewshed, newViewshed):", detectOverlap(viewshed, newViewshed));
+         const overlapDetected = detectOverlap(viewshed, newViewshed);
+         if (overlapDetected) {
+           viewshed.color = overlapColor;
+           newViewshed.color = overlapColor;
+         } else {
+           viewshed.color = viewshedColor;
+           newViewshed.color = viewshedColor;
          }
-       });
-     }
-     function detectOverlap(viewshed1, viewshed2) {
-       // Get the geometries of the viewsheds
-       const geometry1 = viewshed1.geometry;
-       const geometry2 = viewshed2.geometry;
-       console.log("viewshed1.geometry:", viewshed1.geometry);
-       console.log("viewshed2.geometry:", viewshed2.geometry);
-       // Check if the geometries intersect
-       return intersectsOperator.execute(geometry1, geometry2);
-       console.log("intersectsOperator.execute(geometry1, geometry2):", intersectsOperator.execute(geometry1, geometry2));
-     }
+       }
+     });
+    }
    });
  });
 });

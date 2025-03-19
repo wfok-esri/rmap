@@ -443,9 +443,13 @@ require([
          if (overlapDetected) {
            viewshed.color = overlapColor;
            newViewshed.color = overlapColor;
+           console.log("viewshed.color:", viewshed.color);
+           console.log("newViewshed.color:", newViewshed.color);
          } else {
            viewshed.color = viewshedColor;
            newViewshed.color = viewshedColor;
+           console.log("viewshed.color2:", viewshed.color);
+           console.log("newViewshed.color2:", newViewshed.color);
          }
        }
      });

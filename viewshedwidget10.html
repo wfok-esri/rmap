@@ -336,8 +336,8 @@ require([
        // });
        const hideButton = document.createElement('calcite-button');
        console.log("viewshed_btn:", viewshed);
-       hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
-       hideButton.title = viewshed.visible ? "Show" : "Hide";
+       hideButton.iconStart = viewshed.initialized ? "view-visible" : "view-hide";
+       hideButton.title = viewshed.initialized ? "Show" : "Hide";
        hideButton.addEventListener('click', () => {
          // Toggle visibility by setting the color opacity
          if (viewshed.color.a === 0) {

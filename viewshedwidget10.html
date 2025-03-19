@@ -335,6 +335,7 @@ require([
        //   hideButton.title = viewshed.visible ? "Show" : "Hide";
        // });
        const hideButton = document.createElement('calcite-button');
+       console.log("viewshed_btn:", viewshed);
        hideButton.iconStart = viewshed.visible ? "view-visible" : "view-hide";
        hideButton.title = viewshed.visible ? "Show" : "Hide";
        hideButton.addEventListener('click', () => {

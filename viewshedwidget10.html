@@ -384,6 +384,7 @@ require([
          if (viewshed !== newViewshed) {
            console.log("viewshed:", viewshed);
            console.log("newViewshed:", newViewshed);
+           console.log("detectOverlap(viewshed, newViewshed):", detectOverlap(viewshed, newViewshed));
            const overlapDetected = detectOverlap(viewshed, newViewshed);
            if (overlapDetected) {
              viewshed.color = overlapColor;
@@ -399,9 +400,11 @@ require([
        // Get the geometries of the viewsheds
        const geometry1 = viewshed1.geometry;
        const geometry2 = viewshed2.geometry;
-
+       console.log("viewshed1.geometry:", viewshed1.geometry);
+       console.log("viewshed2.geometry:", viewshed2.geometry);
        // Check if the geometries intersect
        return intersectsOperator.execute(geometry1, geometry2);
+       console.log("intersectsOperator.execute(geometry1, geometry2):", intersectsOperator.execute(geometry1, geometry2));
      }
    });
  });

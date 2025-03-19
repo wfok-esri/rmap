@@ -259,6 +259,7 @@ require([
              viewshedAnalysis.viewsheds.add(viewshed);
              addViewshedToList(viewshed);
              checkOverlap(viewshed);
+             console.log("checkOverlap(viewshed):", viewshed);
            });
          };
          reader.readAsText(file);
@@ -271,6 +272,7 @@ require([
          stopCreating();
          addViewshedToList(analysisView.selectedViewshed);
          checkOverlap(analysisView.selectedViewshed);
+         console.log("checkOverlap(analysisView.selectedViewshed):", analysisView.selectedViewshed);
        }
      );
      cancelButton.addEventListener("click", () => {
@@ -379,6 +381,8 @@ require([
      function checkOverlap(newViewshed) {
        viewshedAnalysis.viewsheds.forEach(viewshed => {
          if (viewshed !== newViewshed) {
+           console.log("viewshed:", viewshed);
+           console.log("newViewshed:", newViewshed);
            const overlapDetected = detectOverlap(viewshed, newViewshed);
            if (overlapDetected) {
              viewshed.color = overlapColor;

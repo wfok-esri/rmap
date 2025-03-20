@@ -40,6 +40,35 @@
      display: none;
      margin-top: 10px;
    }
+   #viewshedListCard {
+     position: absolute;
+     width: 270px;
+     right: var(--calcite-spacing-xxl);
+     top: calc(var(--calcite-spacing-xxl) + 300px);
+     cursor: move;
+   }
+   .viewshed-item {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 5px;
+   }
+   .viewshed-name {
+     flex: 1;
+     margin-right: 10px;
+   }
+   .viewshed-name input {
+     border: none;
+     background: none;
+     pointer-events: none;
+   }
+   .viewshed-name input:focus {
+     pointer-events: auto;
+     background: white;
+   }
+   .viewshed-item calcite-button {
+     margin-left: 5px;
+   }
  </style>
  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
@@ -68,6 +97,10 @@
    </div>
    <calcite-button id="exportButton">Export Viewsheds</calcite-button>
    <calcite-button id="importButton">Import Viewsheds</calcite-button>
+ </calcite-card>
+ <calcite-card id="viewshedListCard">
+   <calcite-card-title>Viewshed List</calcite-card-title>
+   <div id="viewshedList"></div>
  </calcite-card>
  <script>
    require([
@@ -106,6 +139,7 @@
          const addManualViewshedButton = document.getElementById("addManualViewshed");
          const exportButton = document.getElementById("exportButton");
          const importButton = document.getElementById("importButton");
+         const viewshedList = document.getElementById("viewshedList");
 
          let abortController = null;
          let isManualMode = false;
@@ -143,6 +177,7 @@
                verticalFieldOfView: 60
              });
              viewshedLayer.source.viewsheds.add(manualViewshed);
+             addViewshedToList(manualViewshed);
            }
          });
 
@@ -189,6 +224,7 @@
                    verticalFieldOfView: 60
                  });
                  viewshedLayer.source.viewsheds.add(viewshed);
+                 addViewshedToList(viewshed);
                });
              };
              reader.readAsText(file);
@@ -200,6 +236,7 @@
            () => viewshedLayer.source.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
            () => {
              stopCreating();
+             addViewshedToList(analysisView.selectedViewshed);
            }
          );
 
@@ -242,6 +279,50 @@
            const creating = abortController != null;
            createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
            cancelButton.style.display = creating ? "flex" : "none";
+         }
+
+         function addViewshedToList(viewshed) {
+           const item = document.createElement('div');
+           item.className = 'viewshed-item';
+           const nameInput = document.createElement('calcite-input');
+           nameInput.className = 'viewshed-name';
+           nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+           nameInput.disabled = true;
+           const renameButton = document.createElement('calcite-button');
+           renameButton.iconStart = "pencil";
+           renameButton.title = "Rename";
+           renameButton.addEventListener('click', () => {
+             nameInput.disabled = !nameInput.disabled;
+             if (!nameInput.disabled) nameInput.focus();
+           });
+           const zoomButton = document.createElement('calcite-button');
+           zoomButton.iconStart = "magnifying-glass";
+           zoomButton.title = "Zoom To";
+           zoomButton.addEventListener('click', () => {
+             const camera = new Camera({
+               position: {
+                 spatialReference: SpatialReference.WebMercator,
+                 x: viewshed.observer.x,
+                 y: viewshed.observer.y,
+                 z: viewshed.observer.z + 1000 // Adjust the height as needed
+               },
+               tilt: 0,
+               heading: 0
+             });
+             view.goTo(camera);
+           });
+           const removeButton = document.createElement('calcite-button');
+           removeButton.iconStart = "trash";
+           removeButton.title = "Remove";
+           removeButton.addEventListener('click', () => {
+             viewshedLayer.source.viewsheds.remove(viewshed);
+             viewshedList.removeChild(item);
+           });
+           item.appendChild(nameInput);
+           item.appendChild(renameButton);
+           item.appendChild(zoomButton);
+           item.appendChild(removeButton);
+           viewshedList.appendChild(item);
          }
        });
      });

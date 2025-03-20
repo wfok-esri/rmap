@@ -85,12 +85,20 @@
      sceneElement.addEventListener("arcgisViewReadyChange", () => {
        const view = sceneElement.view;
        view.when(async () => {
-         const viewshedAnalysis = new ViewshedAnalysis();
-         view.analyses.add(viewshedAnalysis);
+         // Create a ViewshedLayer to hold all the viewsheds
+         const viewshedLayer = new ViewshedLayer({
+           title: "Viewsheds",
+           source: new ViewshedAnalysis()
+         });
+
+         // Add the ViewshedLayer to the map
+         view.map.add(viewshedLayer);
+
          let creatingStarted = false;
-         let viewshedCounter = viewshedAnalysis.viewsheds.length;
-         const analysisView = await view.whenAnalysisView(viewshedAnalysis);
+         let viewshedCounter = viewshedLayer.source.viewsheds.length;
+         const analysisView = await view.whenAnalysisView(viewshedLayer.source);
          analysisView.interactive = true;
+
          const createButton = document.getElementById("createButton");
          const cancelButton = document.getElementById("cancelButton");
          const toggleModeButton = document.getElementById("toggleModeButton");
@@ -98,11 +106,14 @@
          const addManualViewshedButton = document.getElementById("addManualViewshed");
          const exportButton = document.getElementById("exportButton");
          const importButton = document.getElementById("importButton");
+
          let abortController = null;
          let isManualMode = false;
+
          createButton.addEventListener("click", () => {
            startCreating();
          });
+
          toggleModeButton.addEventListener("click", () => {
            isManualMode = !isManualMode;
            toggleModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
@@ -110,6 +121,7 @@
            createButton.style.display = isManualMode ? "none" : "flex";
            if (isManualMode) stopCreating();
          });
+
          addManualViewshedButton.addEventListener("click", () => {
            const lat = parseFloat(document.getElementById("latInput").value);
            const long = parseFloat(document.getElementById("longInput").value);
@@ -130,11 +142,12 @@
                horizontalFieldOfView: 85,
                verticalFieldOfView: 60
              });
-             viewshedAnalysis.viewsheds.add(manualViewshed);
+             viewshedLayer.source.viewsheds.add(manualViewshed);
            }
          });
+
          exportButton.addEventListener("click", () => {
-           const viewshedsData = viewshedAnalysis.viewsheds.map(viewshed => ({
+           const viewshedsData = viewshedLayer.source.viewsheds.map(viewshed => ({
              lat: viewshed.observer.y,
              long: viewshed.observer.x,
              height: viewshed.observer.z,
@@ -151,6 +164,7 @@
            document.body.removeChild(a);
            URL.revokeObjectURL(url);
          });
+
          importButton.addEventListener("click", () => {
            const input = document.createElement('input');
            input.type = 'file';
@@ -174,27 +188,31 @@
                    horizontalFieldOfView: 85,
                    verticalFieldOfView: 60
                  });
-                 viewshedAnalysis.viewsheds.add(viewshed);
+                 viewshedLayer.source.viewsheds.add(viewshed);
                });
              };
              reader.readAsText(file);
            };
            input.click();
          });
+
          reactiveUtils.when(
-           () => viewshedAnalysis.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
+           () => viewshedLayer.source.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
            () => {
              stopCreating();
            }
          );
+
          cancelButton.addEventListener("click", () => {
            stopCreating();
          });
+
          view.on("key-down", (event) => {
            if (event.key == "Escape") {
              stopCreating();
            }
          });
+
          function startCreating() {
            stopCreating();
            creatingStarted = true;
@@ -211,13 +229,15 @@
                updateUI();
              });
          }
+
          function stopCreating() {
            abortController?.abort();
            abortController = null;
            updateUI();
            creatingStarted = false;
-           viewshedCounter = viewshedAnalysis.viewsheds.length;
+           viewshedCounter = viewshedLayer.source.viewsheds.length;
          }
+
          function updateUI() {
            const creating = abortController != null;
            createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");

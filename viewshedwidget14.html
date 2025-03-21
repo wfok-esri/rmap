@@ -307,28 +307,28 @@ let isDragging = false;
              nameInput.disabled = !nameInput.disabled;
              if (!nameInput.disabled) nameInput.focus();
            });
+           //visibilityButton remove/readd a viewshed from/to the viewshedLayer.source.viewsheds collection to do the "Hide" and "Show" action on scene
            const visibilityButton = document.createElement('calcite-button');
            visibilityButton.iconStart = "view-visible";
            visibilityButton.title = "Toggle Visibility";
            visibilityButton.addEventListener('click', () => {
              if (viewshedLayer.source.viewsheds.includes(viewshed)) {
-               console.log("visibilitybtn_viewshedLayer.visible:", viewshedLayer.visible);
                viewshedLayer.source.viewsheds.remove(viewshed);
                visibilityButton.iconStart = "view-hide";
              } else {
-               console.log("visibilitybtn_viewshedLayer.visible:", viewshedLayer.visible);
                viewshedLayer.source.viewsheds.add(viewshed);
                visibilityButton.iconStart = "view-visible";
              }
            });
-           const hideButton = document.createElement('calcite-button');
-            hideButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
-            hideButton.title = viewshedLayer.visible ? "Show" : "Hide";
-            hideButton.addEventListener('click', () => {
+          //hideshowButton will control the visibilty of all viewsheds in viewshed list, not yet figure out how to make it only control individual viewshed, maybe ViewshedLayerView
+           const hideshowButton = document.createElement('calcite-button');
+            hideshowButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+            hideshowButton.title = viewshedLayer.visible ? "Show" : "Hide";
+            hideshowButton.addEventListener('click', () => {
               viewshedLayer.visible = !viewshedLayer.visible;
               console.log("hidebtn_viewshedLayer.visible:", viewshedLayer.visible);
-              hideButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
-              hideButton.title = viewshedLayer.visible ? "Show" : "Hide";
+              hideshowButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+              hideshowButton.title = viewshedLayer.visible ? "Show" : "Hide";
             });
            const zoomButton = document.createElement('calcite-button');
            zoomButton.iconStart = "magnifying-glass";
@@ -356,7 +356,7 @@ let isDragging = false;
            item.appendChild(nameInput);
            item.appendChild(renameButton);
            item.appendChild(visibilityButton);
-           item.appendChild(hideButton);
+           item.appendChild(hideshowButton);
            item.appendChild(zoomButton);
            item.appendChild(removeButton);
            viewshedList.appendChild(item);

@@ -113,12 +113,13 @@
      "esri/Camera",
      "esri/views/SceneView",
      "esri/layers/ViewshedLayer",
+     "esri/views/layers/ViewshedLayerView",
      "esri/analysis/ViewshedAnalysis",
      "esri/analysis/Viewshed",
      "esri/geometry/SpatialReference",
      "esri/core/promiseUtils",
      "esri/core/reactiveUtils"
-   ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
+   ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
      const sceneElement = document.getElementById("sceneview");
      sceneElement.addEventListener("arcgisViewReadyChange", () => {
        const view = sceneElement.view;

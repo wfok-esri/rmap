@@ -132,16 +132,6 @@
 
          // Add the ViewshedLayer to the map
          view.map.add(viewshedLayer);
-         
-         // retrieve layer view for the layer
-         view.whenLayerView(viewshedLayer).then(viewshedLayerView => {
-            // allow existing viewsheds in the layer to be edited by selecting them
-            viewshedLayerView.interactive = true;
-
-            // start adding new viewsheds interactively
-            viewshedLayerView.createViewsheds();
-            console.log("viewshedLayerView", viewshedLayerView);
-         });
 
          let creatingStarted = false;
          let viewshedCounter = viewshedLayer.source.viewsheds.length;

@@ -318,17 +318,13 @@
              if (!nameInput.disabled) nameInput.focus();
            });
            const visibilityButton = document.createElement('calcite-button');
-           visibilityButton.iconStart = "view-visible";
-           visibilityButton.title = "Toggle Visibility";
-           visibilityButton.addEventListener('click', () => {
-             if (_____________) {
-               ______________________________
-               visibilityButton.iconStart = "view-hide";
-             } else {
-               ______________________________
-               visibilityButton.iconStart = "view-visible";
-             }
-           });
+            visibilityButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+            visibilityButton.title = viewshedLayer.visible ? "Show" : "Hide";
+            visibilityButton.addEventListener('click', () => {
+              viewshedLayer.visible = !viewshedLayer.visible;
+              visibilityButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+              visibilityButton.title = viewshedLayer.visible ? "Show" : "Hide";
+            });
            const zoomButton = document.createElement('calcite-button');
            zoomButton.iconStart = "magnifying-glass";
            zoomButton.title = "Zoom To";

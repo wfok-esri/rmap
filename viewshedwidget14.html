@@ -321,13 +321,13 @@ let isDragging = false;
              }
            });
            const hideButton = document.createElement('calcite-button');
-            hideButton.iconStart = viewshedLayer.source.viewsheds.visible ? "view-visible" : "view-hide";
-            hideButton.title = viewshedLayer.source.viewsheds.visible ? "Show" : "Hide";
+            hideButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+            hideButton.title = viewshedLayer.visible ? "Show" : "Hide";
             hideButton.addEventListener('click', () => {
-              viewshedLayer.source.viewsheds.visible = !viewshedLayer.source.viewsheds.visible;
-              console.log("hidebtn_viewshedLayer.visible:", viewshedLayer.source.viewsheds.visible);
-              hideButton.iconStart = viewshedLayer.source.viewsheds.visible ? "view-visible" : "view-hide";
-              hideButton.title = viewshedLayer.source.viewsheds.visible ? "Show" : "Hide";
+              viewshedLayer.visible = !viewshedLayer.visible;
+              console.log("hidebtn_viewshedLayer.visible:", viewshedLayer.visible);
+              hideButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+              hideButton.title = viewshedLayer.visible ? "Show" : "Hide";
             });
            const zoomButton = document.createElement('calcite-button');
            zoomButton.iconStart = "magnifying-glass";

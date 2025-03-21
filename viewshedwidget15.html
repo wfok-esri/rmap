@@ -155,10 +155,10 @@
          const exportButton = document.getElementById("exportButton");
          const importButton = document.getElementById("importButton");
          const viewshedList = document.getElementById("viewshedList");
-const viewshedListCard = document.getElementById("viewshedListCard");
+         const viewshedListCard = document.getElementById("viewshedListCard");
          let abortController = null;
          let isManualMode = false;
-let isDragging = false;
+         let isDragging = false;
           let offsetX, offsetY;
           viewshedListCard.addEventListener("mousedown", (e) => {
             if (e.target === viewshedListCard || e.target.closest("calcite-card-title")) {
@@ -321,25 +321,14 @@ let isDragging = false;
            visibilityButton.iconStart = "view-visible";
            visibilityButton.title = "Toggle Visibility";
            visibilityButton.addEventListener('click', () => {
-             if (viewshedLayer.source.viewsheds.includes(viewshed)) {
-               console.log("visibilitybtn_viewshedLayer.visible:", viewshedLayer.visible);
-               viewshedLayer.source.viewsheds.remove(viewshed);
+             if (_____________) {
+               ______________________________
                visibilityButton.iconStart = "view-hide";
              } else {
-               console.log("visibilitybtn_viewshedLayer.visible:", viewshedLayer.visible);
-               viewshedLayer.source.viewsheds.add(viewshed);
+               ______________________________
                visibilityButton.iconStart = "view-visible";
              }
            });
-           const hideButton = document.createElement('calcite-button');
-            hideButton.iconStart = viewshedLayerView.visible ? "view-visible" : "view-hide";
-            hideButton.title = viewshedLayerView.visible ? "Show" : "Hide";
-            hideButton.addEventListener('click', () => {
-              viewshedLayerView.visible = !viewshedLayerView.visible;
-              console.log("hidebtn_viewshedLayer.visible:", viewshedLayerView.visible);
-              hideButton.iconStart = viewshedLayerView.visible ? "view-visible" : "view-hide";
-              hideButton.title = viewshedLayerView.visible ? "Show" : "Hide";
-            });
            const zoomButton = document.createElement('calcite-button');
            zoomButton.iconStart = "magnifying-glass";
            zoomButton.title = "Zoom To";
@@ -366,7 +355,6 @@ let isDragging = false;
            item.appendChild(nameInput);
            item.appendChild(renameButton);
            item.appendChild(visibilityButton);
-           item.appendChild(hideButton);
            item.appendChild(zoomButton);
            item.appendChild(removeButton);
            viewshedList.appendChild(item);

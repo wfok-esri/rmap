@@ -208,7 +208,6 @@ let isDragging = false;
              distance: viewshed.farDistance,
              visible: viewshed.visible
            }));
-           console.log("viewshed.visible:", viewshed.visible);
            const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
            const url = URL.createObjectURL(blob);
            const a = document.createElement('a');

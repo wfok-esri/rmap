@@ -312,9 +312,11 @@ let isDragging = false;
            visibilityButton.title = "Toggle Visibility";
            visibilityButton.addEventListener('click', () => {
              if (viewshedLayer.source.viewsheds.includes(viewshed)) {
+               console.log("visibilitybtn_viewshedLayer.visible:", viewshedLayer.visible);
                viewshedLayer.source.viewsheds.remove(viewshed);
                visibilityButton.iconStart = "view-hide";
              } else {
+               console.log("visibilitybtn_viewshedLayer.visible:", viewshedLayer.visible);
                viewshedLayer.source.viewsheds.add(viewshed);
                visibilityButton.iconStart = "view-visible";
              }
@@ -324,6 +326,7 @@ let isDragging = false;
             hideButton.title = viewshedLayer.visible ? "Show" : "Hide";
             hideButton.addEventListener('click', () => {
               viewshedLayer.visible = !viewshedLayer.visible;
+              console.log("hidebtn_viewshedLayer.visible:", viewshedLayer.visible);
               hideButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
               hideButton.title = viewshedLayer.visible ? "Show" : "Hide";
             });

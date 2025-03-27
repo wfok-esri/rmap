@@ -1,0 +1,270 @@
+<script>
+  require([
+    "esri/WebScene",
+    "esri/Camera",
+    "esri/views/SceneView",
+    "esri/layers/ViewshedLayer",
+    "esri/views/layers/ViewshedLayerView",
+    "esri/analysis/ViewshedAnalysis",
+    "esri/analysis/Viewshed",
+    "esri/geometry/SpatialReference",
+    "esri/core/promiseUtils",
+    "esri/core/reactiveUtils"
+  ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
+    const sceneElement = document.getElementById("sceneview");
+    sceneElement.addEventListener("arcgisViewReadyChange", () => {
+      const view = sceneElement.view;
+      view.when(async () => {
+        // Create a ViewshedLayer to hold all the viewsheds
+        const viewshedLayer = new ViewshedLayer({
+          title: "Viewsheds",
+          source: new ViewshedAnalysis()
+        });
+
+        // Add the ViewshedLayer to the map
+        view.map.add(viewshedLayer);
+
+        let creatingStarted = false;
+        let viewshedCounter = viewshedLayer.source.viewsheds.length;
+        const analysisView = await view.whenAnalysisView(viewshedLayer.source);
+        analysisView.interactive = true;
+        const createButton = document.getElementById("createButton");
+        const cancelButton = document.getElementById("cancelButton");
+        const toggleModeButton = document.getElementById("toggleModeButton");
+        const manualInputForm = document.getElementById("manualInputForm");
+        const addManualViewshedButton = document.getElementById("addManualViewshed");
+        const exportButton = document.getElementById("exportButton");
+        const importButton = document.getElementById("importButton");
+        const viewshedList = document.getElementById("viewshedList");
+        const viewshedListCard = document.getElementById("viewshedListCard");
+        let abortController = null;
+        let isManualMode = false;
+        let isDragging = false;
+        let offsetX, offsetY;
+        viewshedListCard.addEventListener("mousedown", (e) => {
+          if (e.target === viewshedListCard || e.target.closest("calcite-card-title")) {
+            isDragging = true;
+            offsetX = e.clientX - viewshedListCard.offsetLeft;
+            offsetY = e.clientY - viewshedListCard.offsetTop;
+          }
+        });
+        document.addEventListener("mousemove", (e) => {
+          if (isDragging) {
+            viewshedListCard.style.left = `${e.clientX - offsetX}px`;
+            viewshedListCard.style.top = `${e.clientY - offsetY}px`;
+          }
+        });
+        document.addEventListener("mouseup", () => {
+          isDragging = false;
+        });
+        createButton.addEventListener("click", () => {
+          startCreating();
+        });
+        toggleModeButton.addEventListener("click", () => {
+          isManualMode = !isManualMode;
+          toggleModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
+          manualInputForm.style.display = isManualMode ? "block" : "none";
+          createButton.style.display = isManualMode ? "none" : "flex";
+          if (isManualMode) stopCreating();
+        });
+        addManualViewshedButton.addEventListener("click", () => {
+          const lat = parseFloat(document.getElementById("latInput").value);
+          const long = parseFloat(document.getElementById("longInput").value);
+          const height = parseFloat(document.getElementById("heightInput").value);
+          const angle = parseFloat(document.getElementById("angleInput").value);
+          const distance = parseFloat(document.getElementById("distanceInput").value);
+          if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
+            const manualViewshed = new Viewshed({
+              observer: {
+                spatialReference: SpatialReference.WebMercator,
+                x: long,
+                y: lat,
+                z: height
+              },
+              farDistance: distance,
+              tilt: angle,
+              heading: 0,
+              horizontalFieldOfView: 85,
+              verticalFieldOfView: 60
+            });
+            viewshedLayer.source.viewsheds.add(manualViewshed);
+            if (!isViewshedInList(manualViewshed)) {
+              addViewshedToList(manualViewshed);
+            }
+          }
+        });
+        exportButton.addEventListener("click", () => {
+          const viewshedsData = viewshedLayer.source.viewsheds.map(viewshed => ({
+            lat: viewshed.observer.y,
+            long: viewshed.observer.x,
+            height: viewshed.observer.z,
+            angle: viewshed.tilt,
+            distance: viewshed.farDistance,
+            visible: viewshed.visible
+          }));
+          const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'viewsheds.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+        importButton.addEventListener("click", () => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'application/json';
+          input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = event => {
+              const viewshedsData = JSON.parse(event.target.result);
+              viewshedsData.forEach(data => {
+                const viewshed = new Viewshed({
+                  observer: {
+                    spatialReference: SpatialReference.WebMercator,
+                    x: data.long,
+                    y: data.lat,
+                    z: data.height
+                  },
+                  farDistance: data.distance,
+                  tilt: data.angle,
+                  heading: 0,
+                  horizontalFieldOfView: 85,
+                  verticalFieldOfView: 60
+                });
+                viewshedLayer.source.viewsheds.add(viewshed);
+                if (!isViewshedInList(viewshed)) {
+                  addViewshedToList(viewshed);
+                }
+              });
+            };
+            reader.readAsText(file);
+          };
+          input.click();
+        });
+        reactiveUtils.when(
+          () => viewshedLayer.source.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
+          () => {
+            if (!isViewshedInList(analysisView.selectedViewshed)) {
+              stopCreating();
+              addViewshedToList(analysisView.selectedViewshed);
+            }
+          }
+        );
+        cancelButton.addEventListener("click", () => {
+          stopCreating();
+        });
+        view.on("key-down", (event) => {
+          if (event.key == "Escape") {
+            stopCreating();
+          }
+        });
+        function startCreating() {
+          stopCreating();
+          creatingStarted = true;
+          abortController = new AbortController();
+          updateUI();
+          analysisView
+            .createViewsheds({ signal: abortController.signal })
+            .catch((e) => {
+              if (!promiseUtils.isAbortError(e)) {
+                throw e;
+              }
+            })
+            .finally(() => {
+              updateUI();
+            });
+        }
+        function stopCreating() {
+          abortController?.abort();
+          abortController = null;
+          updateUI();
+          creatingStarted = false;
+          viewshedCounter = viewshedLayer.source.viewsheds.length;
+        }
+        function updateUI() {
+          const creating = abortController != null;
+          createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
+          cancelButton.style.display = creating ? "flex" : "none";
+        }
+        function isViewshedInList(viewshed) {
+          return Array.from(viewshedList.children).some(item => {
+            const nameInput = item.querySelector('.viewshed-name');
+            return nameInput && nameInput.value === `Viewshed ${viewshedList.children.length + 1}`;
+          });
+        }
+        function addViewshedToList(viewshed) {
+          const item = document.createElement('div');
+          item.className = 'viewshed-item';
+          const nameInput = document.createElement('calcite-input');
+          nameInput.className = 'viewshed-name';
+          nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+          nameInput.disabled = true;
+          const renameButton = document.createElement('calcite-button');
+          renameButton.iconStart = "pencil";
+          renameButton.title = "Rename";
+          renameButton.addEventListener('click', () => {
+            nameInput.disabled = !nameInput.disabled;
+            if (!nameInput.disabled) nameInput.focus();
+          });
+          //visibilityButton remove/re-add a viewshed from/to the viewshedLayer.source.viewsheds collection to do the "Hide" and "Show" action on scene
+          const visibilityButton = document.createElement('calcite-button');
+          visibilityButton.iconStart = "view-visible";
+          visibilityButton.title = "Toggle Visibility";
+          visibilityButton.addEventListener('click', () => {
+            if (viewshedLayer.source.viewsheds.includes(viewshed)) {
+              viewshedLayer.source.viewsheds.remove(viewshed);
+              visibilityButton.iconStart = "view-hide";
+            } else {
+              viewshedLayer.source.viewsheds.add(viewshed);
+              visibilityButton.iconStart = "view-visible";
+            }
+          });
+          //hideshowButton will control the visibilty of all viewsheds in viewshed list, not yet figure out how to make it only control individual viewshed, maybe ViewshedLayerView
+          const hideshowButton = document.createElement('calcite-button');
+          hideshowButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+          hideshowButton.title = viewshedLayer.visible ? "Show" : "Hide";
+          hideshowButton.addEventListener('click', () => {
+            viewshedLayer.visible = !viewshedLayer.visible;
+            console.log("hidebtn_viewshedLayer.visible:", viewshedLayer.visible);
+            hideshowButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
+            hideshowButton.title = viewshedLayer.visible ? "Show" : "Hide";
+          });
+          const zoomButton = document.createElement('calcite-button');
+          zoomButton.iconStart = "magnifying-glass";
+          zoomButton.title = "Zoom To";
+          zoomButton.addEventListener('click', () => {
+            const camera = new Camera({
+              position: {
+                spatialReference: SpatialReference.WebMercator,
+                x: viewshed.observer.x,
+                y: viewshed.observer.y,
+                z: viewshed.observer.z + 1000 // Adjust the height as needed
+              },
+              tilt: 0,
+              heading: 0
+            });
+            view.goTo(camera);
+          });
+          const removeButton = document.createElement('calcite-button');
+          removeButton.iconStart = "trash";
+          removeButton.title = "Remove";
+          removeButton.addEventListener('click', () => {
+            viewshedLayer.source.viewsheds.remove(viewshed);
+            viewshedList.removeChild(item);
+          });
+          item.appendChild(nameInput);
+          item.appendChild(renameButton);
+          item.appendChild(visibilityButton);
+          //item.appendChild(hideshowButton);
+          item.appendChild(zoomButton);
+          item.appendChild(removeButton);
+          viewshedList.appendChild(item);
+        }
+      });
+    });
+  });
+</script>

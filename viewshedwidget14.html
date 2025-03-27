@@ -308,7 +308,7 @@ let isDragging = false;
              nameInput.disabled = !nameInput.disabled;
              if (!nameInput.disabled) nameInput.focus();
            });
-           //visibilityButton remove/readd a viewshed from/to the viewshedLayer.source.viewsheds collection to do the "Hide" and "Show" action on scene
+           //visibilityButton remove/re-add a viewshed from/to the viewshedLayer.source.viewsheds collection to do the "Hide" and "Show" action on scene
            const visibilityButton = document.createElement('calcite-button');
            visibilityButton.iconStart = "view-visible";
            visibilityButton.title = "Toggle Visibility";
@@ -357,7 +357,7 @@ let isDragging = false;
            item.appendChild(nameInput);
            item.appendChild(renameButton);
            item.appendChild(visibilityButton);
-           item.appendChild(hideshowButton);
+           //item.appendChild(hideshowButton);
            item.appendChild(zoomButton);
            item.appendChild(removeButton);
            viewshedList.appendChild(item);

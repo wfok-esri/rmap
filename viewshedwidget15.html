@@ -1,604 +1,644 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Custom Viewshed Widget</title>
-<style>
-  html,
-  body,
-  #sceneview {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  #previewContainer {
-    pointer-events: none;
-    width: 200px;
-    height: 125px;
-    margin: 0;
-    position: absolute;
-    bottom: 25px;
-    right: 10px;
-    border: 1px solid dimgrey;
-  }
-  arcgis-scene {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-  #viewshedControls {
-    position: absolute;
-    width: 270px;
-    right: var(--calcite-spacing-xxl);
-    top: var(--calcite-spacing-xxl);
-  }
-  #viewshedListCard {
-    position: absolute;
-    width: 270px;
-    right: var(--calcite-spacing-xxl);
-    top: calc(var(--calcite-spacing-xxl) + 300px);
-    cursor: move;
-  }
-  #overlapListCard {
-    position: absolute;
-    width: 270px;
-    right: var(--calcite-spacing-xxl);
-    top: calc(var(--calcite-spacing-xxl) + 600px);
-    cursor: move;
-  }
-  #viewshedControls calcite-button {
-     display: flex;
-   }
-   #manualInputForm {
-     display: none;
-     margin-top: 10px;
-   }
-   #analysisControls {
-     display: none;
-     margin-top: 10px;
-   }
-   #viewshedList, #overlapList {
-     margin-top: 10px;
-   }
-  .viewshed-item, .overlap-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-  }
-  .viewshed-name, .overlap-name {
-    flex: 1;
-    margin-right: 10px;
-  }
-  .viewshed-name input, .overlap-name input {
-    border: none;
-    background: none;
-    pointer-events: none;
-  }
-  .viewshed-name input:focus, .overlap-name input:focus {
-    pointer-events: auto;
-    background: white;
-  }
-  .viewshed-item calcite-button, .overlap-item calcite-button {
-    margin-left: 5px;
-  }
-  .color-picker {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #ccc;
-    display: inline-block;
-    margin-left: 5px;
-    cursor: pointer;
-  }
-</style>
-<script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
-<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
-<script src="https://js.arcgis.com/4.31/"></script>
-<script type="module" src="https://js.arcgis.com/map-components/4.31/arcgis-map-components.esm.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Custom Viewshed Widget</title>
+    <style>
+        html,
+        body,
+        #sceneview {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #previewContainer {
+            pointer-events: none;
+            width: 200px;
+            height: 125px;
+            margin: 0;
+            position: absolute;
+            bottom: 25px;
+            right: 10px;
+            border: 1px solid dimgrey;
+        }
+
+        arcgis-scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #viewshedControls {
+            position: absolute;
+            width: 270px;
+            right: var(--calcite-spacing-xxl);
+            top: var(--calcite-spacing-xxl);
+        }
+
+        #viewshedListCard {
+            position: absolute;
+            width: 270px;
+            right: var(--calcite-spacing-xxl);
+            top: calc(var(--calcite-spacing-xxl) + 300px);
+            cursor: move;
+        }
+
+        #overlapListCard {
+            position: absolute;
+            width: 270px;
+            right: var(--calcite-spacing-xxl);
+            top: calc(var(--calcite-spacing-xxl) + 600px);
+            cursor: move;
+        }
+
+        #viewshedControls calcite-button {
+            display: flex;
+        }
+
+        #manualInputForm {
+            display: none;
+            margin-top: 10px;
+        }
+
+        #analysisControls {
+            display: none;
+            margin-top: 10px;
+        }
+
+        #viewshedList,
+        #overlapList {
+            margin-top: 10px;
+        }
+
+        .viewshed-item,
+        .overlap-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .viewshed-name,
+        .overlap-name {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .viewshed-name input,
+        .overlap-name input {
+            border: none;
+            background: none;
+            pointer-events: none;
+        }
+
+        .viewshed-name input:focus,
+        .overlap-name input:focus {
+            pointer-events: auto;
+            background: white;
+        }
+
+        .viewshed-item calcite-button,
+        .overlap-item calcite-button {
+            margin-left: 5px;
+        }
+
+        .color-picker {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.31/"></script>
+    <script type="module" src="https://js.arcgis.com/map-components/4.31/arcgis-map-components.esm.js"></script>
 </head>
+
 <body>
-<arcgis-scene id="sceneview" item-id="ea0dff6e8e3b442a9fe37560ee16f830">
-<arcgis-zoom position="top-left"></arcgis-zoom>
-<arcgis-navigation-toggle position="top-left"></arcgis-navigation-toggle>
-<arcgis-compass position="top-left"></arcgis-compass>
-</arcgis-scene>
-<div id="previewContainer"></div>
-<calcite-card id="viewshedControls">
-<calcite-button id="modeToggleButton">Switch to Analysis Mode</calcite-button>
-<div id="editModeControls">
-<calcite-button id="createButton">Create Viewshed</calcite-button>
-<calcite-button id="cancelButton" style="display: none">Cancel</calcite-button>
-<calcite-button id="toggleInputModeButton">Switch to Manual Input</calcite-button>
-<div id="manualInputForm">
-<calcite-input id="latInput" placeholder="Latitude"></calcite-input>
-<calcite-input id="longInput" placeholder="Longitude"></calcite-input>
-<calcite-input id="heightInput" placeholder="Height"></calcite-input>
-<calcite-input id="angleInput" placeholder="View Angle"></calcite-input>
-<calcite-input id="distanceInput" placeholder="Distance"></calcite-input>
-<calcite-button id="addManualViewshed">Add Viewshed</calcite-button>
-</div>
-<calcite-button id="exportButton">Export Viewsheds</calcite-button>
-<calcite-button id="importButton">Import Viewsheds</calcite-button>
-</div>
-<div id="analysisControls">
-<calcite-button id="findOverlapsButton">Find Overlaps</calcite-button>
-<calcite-button id="clearOverlapsButton">Clear Overlaps</calcite-button>
-<div style="margin-top: 10px;">
-<label>Overlap Color:</label>
-<input type="color" id="overlapColorPicker" value="#FF0000">
-</div>
-<div style="margin-top: 5px;">
-<label>Border Color:</label>
-<input type="color" id="borderColorPicker" value="#000000">
-</div>
-</div>
-</calcite-card>
-<calcite-card id="viewshedListCard">
-<calcite-card-title>Viewshed List</calcite-card-title>
-<div id="viewshedList"></div>
-</calcite-card>
-<calcite-card id="overlapListCard">
-<calcite-card-title>Overlap Areas</calcite-card-title>
-<div id="overlapList"></div>
-</calcite-card>
-<script>
-  require([
-    "esri/WebScene",
-    "esri/Camera",
-    "esri/views/SceneView",
-    "esri/layers/ViewshedLayer",
-    "esri/views/layers/ViewshedLayerView",
-    "esri/analysis/ViewshedAnalysis",
-    "esri/analysis/Viewshed",
-    "esri/geometry/SpatialReference",
-    "esri/core/promiseUtils",
-    "esri/core/reactiveUtils",
-    "esri/layers/GraphicsLayer",
-    "esri/Graphic",
-    "esri/geometry/Polygon",
-    "esri/symbols/SimpleFillSymbol",
-    "esri/symbols/SimpleLineSymbol",
-    "esri/geometry/operators/intersectionOperator",
-    "esri/geometry/operators/geodesicBufferOperator"
-  ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, 
-      promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
-    const sceneElement = document.getElementById("sceneview");
-    sceneElement.addEventListener("arcgisViewReadyChange", () => {
-      const view = sceneElement.view;
-      view.when(async () => {
-        // Create a ViewshedLayer to hold all the viewsheds
-        const viewshedLayer = new ViewshedLayer({
-          title: "Viewsheds",
-          source: new ViewshedAnalysis()
-        });
-        // Create a GraphicsLayer for overlap polygons
-        const overlapsLayer = new GraphicsLayer({
-          title: "Viewshed Overlaps"
-        });
-        view.map.add(overlapsLayer);
-        // Add the ViewshedLayer to the map
-        view.map.add(viewshedLayer);
-        let creatingStarted = false;
-        let viewshedCounter = viewshedLayer.source.viewsheds.length;
-        const analysisView = await view.whenAnalysisView(viewshedLayer.source);
-        analysisView.interactive = true;
-        // UI Elements
-        const modeToggleButton = document.getElementById("modeToggleButton");
-        const editModeControls = document.getElementById("editModeControls");
-        const analysisControls = document.getElementById("analysisControls");
-        const createButton = document.getElementById("createButton");
-        const cancelButton = document.getElementById("cancelButton");
-        const toggleInputModeButton = document.getElementById("toggleInputModeButton");
-        const manualInputForm = document.getElementById("manualInputForm");
-        const addManualViewshedButton = document.getElementById("addManualViewshed");
-        const exportButton = document.getElementById("exportButton");
-        const importButton = document.getElementById("importButton");
-        const viewshedList = document.getElementById("viewshedList");
-        const viewshedListCard = document.getElementById("viewshedListCard");
-        const overlapList = document.getElementById("overlapList");
-        const overlapListCard = document.getElementById("overlapListCard");
-        const findOverlapsButton = document.getElementById("findOverlapsButton");
-        const clearOverlapsButton = document.getElementById("clearOverlapsButton");
-        const overlapColorPicker = document.getElementById("overlapColorPicker");
-        const borderColorPicker = document.getElementById("borderColorPicker");
-        let abortController = null;
-        let isManualMode = false;
-        let isAnalysisMode = false;
-        let isDragging = false;
-        let offsetX, offsetY;
-        // Make cards draggable
-        function setupDraggableCard(card) {
-          card.addEventListener("mousedown", (e) => {
-            if (e.target === card || e.target.closest("calcite-card-title")) {
-              isDragging = true;
-              offsetX = e.clientX - card.offsetLeft;
-              offsetY = e.clientY - card.offsetTop;
-            }
-          });
-        }
-        setupDraggableCard(viewshedListCard);
-        setupDraggableCard(overlapListCard);
-        document.addEventListener("mousemove", (e) => {
-          if (isDragging) {
-            viewshedListCard.style.left = `${e.clientX - offsetX}px`;
-            viewshedListCard.style.top = `${e.clientY - offsetY}px`;
-            overlapListCard.style.left = `${e.clientX - offsetX}px`;
-            overlapListCard.style.top = `${e.clientY - offsetY}px`;
-          }
-        });
-        document.addEventListener("mouseup", () => {
-          isDragging = false;
-        });
-        // Mode toggle
-        modeToggleButton.addEventListener("click", () => {
-          isAnalysisMode = !isAnalysisMode;
-          modeToggleButton.textContent = isAnalysisMode ? "Switch to Edit Mode" : "Switch to Analysis Mode";
-          editModeControls.style.display = isAnalysisMode ? "none" : "block";
-          analysisControls.style.display = isAnalysisMode ? "block" : "none";
-          if (!isAnalysisMode) {
-            clearOverlaps();
-          }
-        });
-        // Find overlaps between viewsheds
-        findOverlapsButton.addEventListener("click", () => {
-          findOverlaps();
-        });
-        // Clear overlap polygons
-        clearOverlapsButton.addEventListener("click", () => {
-          clearOverlaps();
-        });
-        // Update symbology when color pickers change
-        overlapColorPicker.addEventListener("change", updateOverlapSymbology);
-        borderColorPicker.addEventListener("change", updateOverlapSymbology);
-        // Original functionality
-        createButton.addEventListener("click", () => {
-          startCreating();
-        });
-        toggleInputModeButton.addEventListener("click", () => {
-          isManualMode = !isManualMode;
-          toggleInputModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
-          manualInputForm.style.display = isManualMode ? "block" : "none";
-          createButton.style.display = isManualMode ? "none" : "flex";
-          if (isManualMode) stopCreating();
-        });
-        addManualViewshedButton.addEventListener("click", () => {
-          const lat = parseFloat(document.getElementById("latInput").value);
-          const long = parseFloat(document.getElementById("longInput").value);
-          const height = parseFloat(document.getElementById("heightInput").value);
-          const angle = parseFloat(document.getElementById("angleInput").value);
-          const distance = parseFloat(document.getElementById("distanceInput").value);
-          if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
-            const manualViewshed = new Viewshed({
-              observer: {
-                spatialReference: SpatialReference.WebMercator,
-                x: long,
-                y: lat,
-                z: height
-              },
-              farDistance: distance,
-              tilt: angle,
-              heading: 0,
-              horizontalFieldOfView: 85,
-              verticalFieldOfView: 60
-            });
-            viewshedCounter++;
-            viewshedLayer.source.viewsheds.add(manualViewshed);
-            addViewshedToList(manualViewshed);
-          }
-        });
-        reactiveUtils.when(
-          () => !isManualMode && viewshedLayer.source.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
-          () => {
-            stopCreating();
-            addViewshedToList(analysisView.selectedViewshed);
-            viewshedCounter = viewshedLayer.source.viewsheds.length;
-          }
-        );
-               exportButton.addEventListener("click", () => {
-          const viewshedsData = viewshedLayer.source.viewsheds.map(viewshed => ({
-            lat: viewshed.observer.y,
-            long: viewshed.observer.x,
-            height: viewshed.observer.z,
-            angle: viewshed.tilt,
-            distance: viewshed.farDistance,
-            visible: viewshed.visible
-          }));
-          const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'viewsheds.json';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        });
-        importButton.addEventListener("click", () => {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'application/json';
-          input.onchange = e => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = event => {
-              const viewshedsData = JSON.parse(event.target.result);
-              viewshedsData.forEach(data => {
-                const viewshed = new Viewshed({
-                  observer: {
-                    spatialReference: SpatialReference.WebMercator,
-                    x: data.long,
-                    y: data.lat,
-                    z: data.height
-                  },
-                  farDistance: data.distance,
-                  tilt: data.angle,
-                  heading: 0,
-                  horizontalFieldOfView: 85,
-                  verticalFieldOfView: 60
+    <arcgis-scene id="sceneview" item-id="ea0dff6e8e3b442a9fe37560ee16f830">
+        <arcgis-zoom position="top-left"></arcgis-zoom>
+        <arcgis-navigation-toggle position="top-left"></arcgis-navigation-toggle>
+        <arcgis-compass position="top-left"></arcgis-compass>
+    </arcgis-scene>
+    <div id="previewContainer"></div>
+    <calcite-card id="viewshedControls">
+        <calcite-button id="modeToggleButton">Switch to Analysis
+            Mode</calcite-button>
+        <div id="editModeControls">
+            <calcite-button id="createButton">Create
+                Viewshed</calcite-button>
+            <calcite-button id="cancelButton" style="display: none">Cancel</calcite-button>
+            <calcite-button id="toggleInputModeButton">Switch to Manual
+                Input</calcite-button>
+            <div id="manualInputForm">
+                <calcite-input id="latInput" placeholder="Latitude"></calcite-input>
+                <calcite-input id="longInput" placeholder="Longitude"></calcite-input>
+                <calcite-input id="heightInput" placeholder="Height"></calcite-input>
+                <calcite-input id="angleInput" placeholder="View Angle"></calcite-input>
+                <calcite-input id="distanceInput" placeholder="Distance"></calcite-input>
+                <calcite-button id="addManualViewshed">Add
+                    Viewshed</calcite-button>
+            </div>
+            <calcite-button id="exportButton">Export
+                Viewsheds</calcite-button>
+            <calcite-button id="importButton">Import
+                Viewsheds</calcite-button>
+        </div>
+        <div id="analysisControls">
+            <calcite-button id="findOverlapsButton">Find
+                Overlaps</calcite-button>
+            <calcite-button id="clearOverlapsButton">Clear
+                Overlaps</calcite-button>
+            <div style="margin-top: 10px;">
+                <label>Overlap Color:</label>
+                <input type="color" id="overlapColorPicker" value="#FF0000">
+            </div>
+            <div style="margin-top: 5px;">
+                <label>Border Color:</label>
+                <input type="color" id="borderColorPicker" value="#000000">
+            </div>
+        </div>
+    </calcite-card>
+    <calcite-card id="viewshedListCard">
+        <calcite-card-title>Viewshed List</calcite-card-title>
+        <div id="viewshedList"></div>
+    </calcite-card>
+    <calcite-card id="overlapListCard">
+        <calcite-card-title>Overlap Areas</calcite-card-title>
+        <div id="overlapList"></div>
+    </calcite-card>
+    <script>
+        require([
+            "esri/WebScene",
+            "esri/Camera",
+            "esri/views/SceneView",
+            "esri/layers/ViewshedLayer",
+            "esri/views/layers/ViewshedLayerView",
+            "esri/analysis/ViewshedAnalysis",
+            "esri/analysis/Viewshed",
+            "esri/geometry/SpatialReference",
+            "esri/core/promiseUtils",
+            "esri/core/reactiveUtils",
+            "esri/layers/GraphicsLayer",
+            "esri/Graphic",
+            "esri/geometry/Polygon",
+            "esri/symbols/SimpleFillSymbol",
+            "esri/symbols/SimpleLineSymbol",
+            "esri/geometry/operators/intersectionOperator",
+            "esri/geometry/operators/geodesicBufferOperator"
+        ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference,
+            promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
+            const sceneElement = document.getElementById("sceneview");
+            sceneElement.addEventListener("arcgisViewReadyChange", () => {
+                const view = sceneElement.view;
+                view.when(async () => {
+                    // Create a ViewshedLayer to hold all the viewsheds
+                    const viewshedLayer = new ViewshedLayer({
+                        title: "Viewsheds",
+                        source: new ViewshedAnalysis()
+                    });
+                    // Create a GraphicsLayer for overlap polygons
+                    const overlapsLayer = new GraphicsLayer({
+                        title: "Viewshed Overlaps"
+                    });
+                    view.map.add(overlapsLayer);
+                    // Add the ViewshedLayer to the map
+                    view.map.add(viewshedLayer);
+                    let creatingStarted = false;
+                    let viewshedCounter = viewshedLayer.source.viewsheds.length;
+                    const analysisView = await view.whenAnalysisView(viewshedLayer.source);
+                    analysisView.interactive = true;
+                    // UI Elements
+                    const modeToggleButton = document.getElementById("modeToggleButton");
+                    const editModeControls = document.getElementById("editModeControls");
+                    const analysisControls = document.getElementById("analysisControls");
+                    const createButton = document.getElementById("createButton");
+                    const cancelButton = document.getElementById("cancelButton");
+                    const toggleInputModeButton = document.getElementById("toggleInputModeButton");
+                    const manualInputForm = document.getElementById("manualInputForm");
+                    const addManualViewshedButton = document.getElementById("addManualViewshed");
+                    const exportButton = document.getElementById("exportButton");
+                    const importButton = document.getElementById("importButton");
+                    const viewshedList = document.getElementById("viewshedList");
+                    const viewshedListCard = document.getElementById("viewshedListCard");
+                    const overlapList = document.getElementById("overlapList");
+                    const overlapListCard = document.getElementById("overlapListCard");
+                    const findOverlapsButton = document.getElementById("findOverlapsButton");
+                    const clearOverlapsButton = document.getElementById("clearOverlapsButton");
+                    const overlapColorPicker = document.getElementById("overlapColorPicker");
+                    const borderColorPicker = document.getElementById("borderColorPicker");
+                    let abortController = null;
+                    let isManualMode = false;
+                    let isAnalysisMode = false;
+                    let isDragging = false;
+                    let offsetX, offsetY;
+                    // Make cards draggable
+                    function setupDraggableCard(card) {
+                        card.addEventListener("mousedown", (e) => {
+                            if (e.target === card || e.target.closest("calcite-card-title")) {
+                                isDragging = true;
+                                offsetX = e.clientX - card.offsetLeft;
+                                offsetY = e.clientY - card.offsetTop;
+                            }
+                        });
+                    }
+                    setupDraggableCard(viewshedListCard);
+                    setupDraggableCard(overlapListCard);
+                    document.addEventListener("mousemove", (e) => {
+                        if (isDragging) {
+                            viewshedListCard.style.left = `${e.clientX - offsetX}px`;
+                            viewshedListCard.style.top = `${e.clientY - offsetY}px`;
+                            overlapListCard.style.left = `${e.clientX - offsetX}px`;
+                            overlapListCard.style.top = `${e.clientY - offsetY}px`;
+                        }
+                    });
+                    document.addEventListener("mouseup", () => {
+                        isDragging = false;
+                    });
+                    // Mode toggle
+                    modeToggleButton.addEventListener("click", () => {
+                        isAnalysisMode = !isAnalysisMode;
+                        modeToggleButton.textContent = isAnalysisMode ? "Switch to Edit Mode" : "Switch to Analysis Mode";
+                        editModeControls.style.display = isAnalysisMode ? "none" : "block";
+                        analysisControls.style.display = isAnalysisMode ? "block" : "none";
+                        if (!isAnalysisMode) {
+                            clearOverlaps();
+                        }
+                    });
+                    // Find overlaps between viewsheds
+                    findOverlapsButton.addEventListener("click", () => {
+                        findOverlaps();
+                    });
+                    // Clear overlap polygons
+                    clearOverlapsButton.addEventListener("click", () => {
+                        clearOverlaps();
+                    });
+                    // Update symbology when color pickers change
+                    overlapColorPicker.addEventListener("change", updateOverlapSymbology);
+                    borderColorPicker.addEventListener("change", updateOverlapSymbology);
+                    // Original functionality
+                    createButton.addEventListener("click", () => {
+                        startCreating();
+                    });
+                    toggleInputModeButton.addEventListener("click", () => {
+                        isManualMode = !isManualMode;
+                        toggleInputModeButton.textContent = isManualMode ? "Switch to Click and Drag" : "Switch to Manual Input";
+                        manualInputForm.style.display = isManualMode ? "block" : "none";
+                        createButton.style.display = isManualMode ? "none" : "flex";
+                        if (isManualMode) stopCreating();
+                    });
+                    addManualViewshedButton.addEventListener("click", () => {
+                        const lat = parseFloat(document.getElementById("latInput").value);
+                        const long = parseFloat(document.getElementById("longInput").value);
+                        const height = parseFloat(document.getElementById("heightInput").value);
+                        const angle = parseFloat(document.getElementById("angleInput").value);
+                        const distance = parseFloat(document.getElementById("distanceInput").value);
+                        if (!isNaN(lat) && !isNaN(long) && !isNaN(height) && !isNaN(angle) && !isNaN(distance)) {
+                            const manualViewshed = new Viewshed({
+                                observer: {
+                                    spatialReference: SpatialReference.WebMercator,
+                                    x: long,
+                                    y: lat,
+                                    z: height
+                                },
+                                farDistance: distance,
+                                tilt: angle,
+                                heading: 0,
+                                horizontalFieldOfView: 85,
+                                verticalFieldOfView: 60
+                            });
+                            viewshedCounter++;
+                            viewshedLayer.source.viewsheds.add(manualViewshed);
+                            addViewshedToList(manualViewshed);
+                        }
+                    });
+                    reactiveUtils.when(
+                        () => !isManualMode && viewshedLayer.source.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
+                        () => {
+                            stopCreating();
+                            addViewshedToList(analysisView.selectedViewshed);
+                            viewshedCounter = viewshedLayer.source.viewsheds.length;
+                        }
+                    );
+                    exportButton.addEventListener("click", () => {
+                        const viewshedsData = viewshedLayer.source.viewsheds.map(viewshed => ({
+                            lat: viewshed.observer.y,
+                            long: viewshed.observer.x,
+                            height: viewshed.observer.z,
+                            angle: viewshed.tilt,
+                            distance: viewshed.farDistance,
+                            visible: viewshed.visible
+                        }));
+                        const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'viewsheds.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                    importButton.addEventListener("click", () => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'application/json';
+                        input.onchange = e => {
+                            const file = e.target.files[0];
+                            const reader = new FileReader();
+                            reader.onload = event => {
+                                const viewshedsData = JSON.parse(event.target.result);
+                                viewshedsData.forEach(data => {
+                                    const viewshed = new Viewshed({
+                                        observer: {
+                                            spatialReference: SpatialReference.WebMercator,
+                                            x: data.long,
+                                            y: data.lat,
+                                            z: data.height
+                                        },
+                                        farDistance: data.distance,
+                                        tilt: data.angle,
+                                        heading: 0,
+                                        horizontalFieldOfView: 85,
+                                        verticalFieldOfView: 60
+                                    });
+                                    viewshedLayer.source.viewsheds.add(viewshed);
+                                    addViewshedToList(viewshed);
+                                });
+                            };
+                            reader.readAsText(file);
+                        };
+                        input.click();
+                    });
+                    cancelButton.addEventListener("click", () => {
+                        stopCreating();
+                    });
+                    view.on("key-down", (event) => {
+                        if (event.key == "Escape") {
+                            stopCreating();
+                        }
+                    });
+                    function startCreating() {
+                        stopCreating();
+                        creatingStarted = true;
+                        abortController = new AbortController();
+                        updateUI();
+                        analysisView
+                            .createViewsheds({ signal: abortController.signal })
+                            .catch((e) => {
+                                if (!promiseUtils.isAbortError(e)) {
+                                    throw e;
+                                }
+                            })
+                            .finally(() => {
+                                updateUI();
+                            });
+                    }
+                    function stopCreating() {
+                        abortController?.abort();
+                        abortController = null;
+                        updateUI();
+                        creatingStarted = false;
+                        viewshedCounter = viewshedLayer.source.viewsheds.length;
+                    }
+                    function updateUI() {
+                        const creating = abortController != null;
+                        createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
+                        cancelButton.style.display = creating ? "flex" : "none";
+                    }
+                    function addViewshedToList(viewshed) {
+                        const item = document.createElement('div');
+                        item.className = 'viewshed-item';
+                        const nameInput = document.createElement('calcite-input');
+                        nameInput.className = 'viewshed-name';
+                        nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+                        nameInput.disabled = true;
+                        const renameButton = document.createElement('calcite-button');
+                        renameButton.iconStart = "pencil";
+                        renameButton.title = "Rename";
+                        renameButton.addEventListener('click', () => {
+                            nameInput.disabled = !nameInput.disabled;
+                            if (!nameInput.disabled) nameInput.focus();
+                        });
+                        const visibilityButton = document.createElement('calcite-button');
+                        visibilityButton.iconStart = "view-visible";
+                        visibilityButton.title = "Toggle Visibility";
+                        visibilityButton.addEventListener('click', () => {
+                            if (viewshedLayer.source.viewsheds.includes(viewshed)) {
+                                viewshedLayer.source.viewsheds.remove(viewshed);
+                                visibilityButton.iconStart = "view-hide";
+                            } else {
+                                viewshedLayer.source.viewsheds.add(viewshed);
+                                visibilityButton.iconStart = "view-visible";
+                            }
+                        });
+                        const zoomButton = document.createElement('calcite-button');
+                        zoomButton.iconStart = "magnifying-glass";
+                        zoomButton.title = "Zoom To";
+                        zoomButton.addEventListener('click', () => {
+                            const camera = new Camera({
+                                position: {
+                                    spatialReference: SpatialReference.WebMercator,
+                                    x: viewshed.observer.x,
+                                    y: viewshed.observer.y,
+                                    z: viewshed.observer.z + 1000
+                                },
+                                tilt: 0,
+                                heading: 0
+                            });
+                            view.goTo(camera);
+                        });
+                        const removeButton = document.createElement('calcite-button');
+                        removeButton.iconStart = "trash";
+                        removeButton.title = "Remove";
+                        removeButton.addEventListener('click', () => {
+                            viewshedLayer.source.viewsheds.remove(viewshed);
+                            viewshedList.removeChild(item);
+                        });
+                        item.appendChild(nameInput);
+                        item.appendChild(renameButton);
+                        item.appendChild(visibilityButton);
+                        item.appendChild(zoomButton);
+                        item.appendChild(removeButton);
+                        viewshedList.appendChild(item);
+                    }
+                    // Analysis Mode Functions
+                    function findOverlaps() {
+                        // Clear existing overlaps
+                        clearOverlaps();
+                        // Get all visible viewsheds
+                        const visibleViewsheds = [];
+                        viewshedLayer.source.viewsheds.forEach(v => {
+                            if (v.visible !== false) { // Account for undefined visibility
+                                visibleViewsheds.push(v);
+                            }
+                        });
+                        console.log("Visible viewsheds count:", visibleViewsheds.length); // Debug log
+                        if (visibleViewsheds.length < 2) {
+                            console.log("Need at least 2 visible viewsheds to find overlaps");
+                            // Add visual feedback
+                            view.popup.open({
+                                title: "Not Enough Viewsheds",
+                                content: "You need at least 2 visible viewsheds to find overlaps.",
+                                location: view.center
+                            });
+                            return;
+                        }
+                        // For pairwise overlaps
+                        let overlapCount = 0;
+                        for (let i = 0; i < visibleViewsheds.length; i++) {
+                            for (let j = i + 1; j < visibleViewsheds.length; j++) {
+                                const vs1 = visibleViewsheds[i];
+                                const vs2 = visibleViewsheds[j];
+                                const area1 = createViewshedArea(vs1);
+                                const area2 = createViewshedArea(vs2);
+                                if (!area1 || !area2) {
+                                    console.warn("Error creating viewshed area");
+                                    continue;
+                                }
+                                try {
+                                    const intersection = intersectionOperator.execute(area1, area2);
+                                    if (intersection) {
+                                        addOverlapPolygon(intersection, `Overlap ${i + 1}-${j + 1}`);
+                                        overlapCount++;
+                                    }
+                                } catch (e) {
+                                    console.warn("Error calculating intersection:", e);
+                                }
+                            }
+                        }
+                        // Provide feedback about results
+                        if (overlapCount > 0) {
+                            console.log(`Found ${overlapCount} overlap areas`);
+                            view.popup.open({
+                                title: "Overlaps Found",
+                                content: `Found ${overlapCount} overlapping areas between viewsheds.`,
+                                location: view.center
+                            });
+                        } else {
+                            console.log("No overlaps found between visible viewsheds");
+                            view.popup.open({
+                                title: "No Overlaps",
+                                content: "No overlapping areas were found between the visible viewsheds.",
+                                location: view.center
+                            });
+                        }
+                    }
+
+                    function createViewshedArea(viewshed) {
+                        const center = {
+                            type: "point",
+                            x: viewshed.observer.x,
+                            y: viewshed.observer.y,
+                            spatialReference: viewshed.observer.spatialReference
+                        };
+                        // Create a circle with radius = farDistance
+                        const radius = viewshed.farDistance;
+                        try {
+                            const circle = geodesicBufferOperator.execute(center, radius, "meters");
+                            console.log("Created buffer", circle);
+                            return circle;
+                        } catch (e) {
+                            console.warn("Error creating buffer:", e);
+                            return null;
+                        }
+                    }
+                    function addOverlapPolygon(geometry, name) {
+                        // Create symbol with current color settings
+                        const fillColor = overlapColorPicker.value;
+                        const borderColor = borderColorPicker.value;
+                        const symbol = new SimpleFillSymbol({
+                            color: fillColor,
+                            outline: new SimpleLineSymbol({
+                                color: borderColor,
+                                width: 2
+                            })
+                        });
+                        // Create graphic
+                        const graphic = new Graphic({
+                            geometry: geometry,
+                            symbol: symbol,
+                            attributes: {
+                                name: name
+                            }
+                        });
+                        // Add to layer
+                        overlapsLayer.add(graphic);
+                        // Add to overlap list
+                        addOverlapToList(graphic, name);
+                    }
+                    function addOverlapToList(graphic, name) {
+                        const item = document.createElement('div');
+                        item.className = 'overlap-item';
+                        const nameInput = document.createElement('calcite-input');
+                        nameInput.className = 'overlap-name';
+                        nameInput.value = name;
+                        nameInput.disabled = true;
+                        const renameButton = document.createElement('calcite-button');
+                        renameButton.iconStart = "pencil";
+                        renameButton.title = "Rename";
+                        renameButton.addEventListener('click', () => {
+                            nameInput.disabled = !nameInput.disabled;
+                            if (!nameInput.disabled) nameInput.focus();
+                            graphic.attributes.name = nameInput.value;
+                        });
+                        const visibilityButton = document.createElement('calcite-button');
+                        visibilityButton.iconStart = "view-visible";
+                        visibilityButton.title = "Toggle Visibility";
+                        visibilityButton.addEventListener('click', () => {
+                            graphic.visible = !graphic.visible;
+                            visibilityButton.iconStart = graphic.visible ? "view-visible" : "view-hide";
+                        });
+                        const zoomButton = document.createElement('calcite-button');
+                        zoomButton.iconStart = "magnifying-glass";
+                        zoomButton.title = "Zoom To";
+                        zoomButton.addEventListener('click', () => {
+                            view.goTo(graphic.geometry);
+                        });
+                        const removeButton = document.createElement('calcite-button');
+                        removeButton.iconStart = "trash";
+                        removeButton.title = "Remove";
+                        removeButton.addEventListener('click', () => {
+                            overlapsLayer.remove(graphic);
+                            overlapList.removeChild(item);
+                        });
+                        item.appendChild(nameInput);
+                        item.appendChild(renameButton);
+                        item.appendChild(visibilityButton);
+                        item.appendChild(zoomButton);
+                        item.appendChild(removeButton);
+                        overlapList.appendChild(item);
+                    }
+                    function clearOverlaps() {
+                        overlapsLayer.removeAll();
+                        overlapList.innerHTML = '';
+                    }
+                    function updateOverlapSymbology() {
+                        const fillColor = overlapColorPicker.value;
+                        const borderColor = borderColorPicker.value;
+                        overlapsLayer.graphics.forEach(graphic => {
+                            graphic.symbol = new SimpleFillSymbol({
+                                color: fillColor,
+                                outline: new SimpleLineSymbol({
+                                    color: borderColor,
+                                    width: 2
+                                })
+                            });
+                        });
+                    }
                 });
-                viewshedLayer.source.viewsheds.add(viewshed);
-                addViewshedToList(viewshed);
-              });
-            };
-            reader.readAsText(file);
-          };
-          input.click();
-        });
-        cancelButton.addEventListener("click", () => {
-          stopCreating();
-        });
-        view.on("key-down", (event) => {
-          if (event.key == "Escape") {
-            stopCreating();
-          }
-        });
-        function startCreating() {
-          stopCreating();
-          creatingStarted = true;
-          abortController = new AbortController();
-          updateUI();
-          analysisView
-            .createViewsheds({ signal: abortController.signal })
-            .catch((e) => {
-              if (!promiseUtils.isAbortError(e)) {
-                throw e;
-              }
-            })
-            .finally(() => {
-              updateUI();
             });
-        }
-        function stopCreating() {
-          abortController?.abort();
-          abortController = null;
-          updateUI();
-          creatingStarted = false;
-          viewshedCounter = viewshedLayer.source.viewsheds.length;
-        }
-        function updateUI() {
-          const creating = abortController != null;
-          createButton.style.display = creating ? "none" : (isManualMode ? "none" : "flex");
-          cancelButton.style.display = creating ? "flex" : "none";
-        }
-        function addViewshedToList(viewshed) {
-          const item = document.createElement('div');
-          item.className = 'viewshed-item';
-          const nameInput = document.createElement('calcite-input');
-          nameInput.className = 'viewshed-name';
-          nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
-          nameInput.disabled = true;
-          const renameButton = document.createElement('calcite-button');
-          renameButton.iconStart = "pencil";
-          renameButton.title = "Rename";
-          renameButton.addEventListener('click', () => {
-            nameInput.disabled = !nameInput.disabled;
-            if (!nameInput.disabled) nameInput.focus();
-          });
-          const visibilityButton = document.createElement('calcite-button');
-          visibilityButton.iconStart = "view-visible";
-          visibilityButton.title = "Toggle Visibility";
-          visibilityButton.addEventListener('click', () => {
-            if (viewshedLayer.source.viewsheds.includes(viewshed)) {
-              viewshedLayer.source.viewsheds.remove(viewshed);
-              visibilityButton.iconStart = "view-hide";
-            } else {
-              viewshedLayer.source.viewsheds.add(viewshed);
-              visibilityButton.iconStart = "view-visible";
-            }
-          });
-          const zoomButton = document.createElement('calcite-button');
-          zoomButton.iconStart = "magnifying-glass";
-          zoomButton.title = "Zoom To";
-          zoomButton.addEventListener('click', () => {
-            const camera = new Camera({
-              position: {
-                spatialReference: SpatialReference.WebMercator,
-                x: viewshed.observer.x,
-                y: viewshed.observer.y,
-                z: viewshed.observer.z + 1000
-              },
-              tilt: 0,
-              heading: 0
-            });
-            view.goTo(camera);
-          });
-          const removeButton = document.createElement('calcite-button');
-          removeButton.iconStart = "trash";
-          removeButton.title = "Remove";
-          removeButton.addEventListener('click', () => {
-            viewshedLayer.source.viewsheds.remove(viewshed);
-            viewshedList.removeChild(item);
-          });
-         item.appendChild(nameInput);
-          item.appendChild(renameButton);
-          item.appendChild(visibilityButton);
-          item.appendChild(zoomButton);
-          item.appendChild(removeButton);
-          viewshedList.appendChild(item);
-        }
-        // Analysis Mode Functions
-        function findOverlaps() {
- // Clear existing overlaps
- clearOverlaps();
- // Get all visible viewsheds
- const visibleViewsheds = [];
- viewshedLayer.source.viewsheds.forEach(v => {
-   if (v.visible !== false) { // Account for undefined visibility
-     visibleViewsheds.push(v);
-   }
- });
- console.log("Visible viewsheds count:", visibleViewsheds.length); // Debug log
- if (visibleViewsheds.length < 2) {
-   console.log("Need at least 2 visible viewsheds to find overlaps");
-   // Add visual feedback
-   view.popup.open({
-     title: "Not Enough Viewsheds",
-     content: "You need at least 2 visible viewsheds to find overlaps.",
-     location: view.center
-   });
-   return;
- }
- // For pairwise overlaps
- let overlapCount = 0;
- for (let i = 0; i < visibleViewsheds.length; i++) {
-   for (let j = i + 1; j < visibleViewsheds.length; j++) {
-     const vs1 = visibleViewsheds[i];
-     const vs2 = visibleViewsheds[j];
-     const area1 = createViewshedArea(vs1);
-     const area2 = createViewshedArea(vs2);
-     try {
-       const intersection = intersectionOperator.execute(area1, area2);
-       if (intersection) {
-         addOverlapPolygon(intersection, `Overlap ${i+1}-${j+1}`);
-         overlapCount++;
-       }
-     } catch (e) {
-       console.warn("Error calculating intersection:", e);
-     }
-   }
- }
- // Provide feedback about results
- if (overlapCount > 0) {
-   console.log(`Found ${overlapCount} overlap areas`);
-   view.popup.open({
-     title: "Overlaps Found",
-     content: `Found ${overlapCount} overlapping areas between viewsheds.`,
-     location: view.center
-   });
- } else {
-   console.log("No overlaps found between visible viewsheds");
-   view.popup.open({
-     title: "No Overlaps",
-     content: "No overlapping areas were found between the visible viewsheds.",
-     location: view.center
-   });
- }
-}
-        
-        function createViewshedArea(viewshed) {
-          // Simplified approach - create a circular area representing the viewshed
-          // In a real app, you'd want to create a more accurate representation
-          const center = {
-            x: viewshed.observer.x,
-            y: viewshed.observer.y,
-            spatialReference: viewshed.observer.spatialReference
-          };
-          // Create a circle with radius = farDistance
-          const radius = viewshed.farDistance;
-          const circle = geodesicBufferOperator.execute(center, radius, "meters");
-          console.log("circle", circle);
-          return circle;
-        }
-        function addOverlapPolygon(geometry, name) {
-          // Create symbol with current color settings
-          const fillColor = overlapColorPicker.value;
-          const borderColor = borderColorPicker.value;
-          const symbol = new SimpleFillSymbol({
-            color: fillColor,
-            outline: new SimpleLineSymbol({
-              color: borderColor,
-              width: 2
-            })
-          });
-          // Create graphic
-          const graphic = new Graphic({
-            geometry: geometry,
-            symbol: symbol,
-            attributes: {
-              name: name
-            }
-          });
-          // Add to layer
-          overlapsLayer.add(graphic);
-          // Add to overlap list
-          addOverlapToList(graphic, name);
-        }
-        function addOverlapToList(graphic, name) {
-          const item = document.createElement('div');
-          item.className = 'overlap-item';
-          const nameInput = document.createElement('calcite-input');
-          nameInput.className = 'overlap-name';
-          nameInput.value = name;
-          nameInput.disabled = true;
-          const renameButton = document.createElement('calcite-button');
-          renameButton.iconStart = "pencil";
-          renameButton.title = "Rename";
-          renameButton.addEventListener('click', () => {
-            nameInput.disabled = !nameInput.disabled;
-            if (!nameInput.disabled) nameInput.focus();
-            graphic.attributes.name = nameInput.value;
-          });
-          const visibilityButton = document.createElement('calcite-button');
-          visibilityButton.iconStart = "view-visible";
-          visibilityButton.title = "Toggle Visibility";
-          visibilityButton.addEventListener('click', () => {
-            graphic.visible = !graphic.visible;
-            visibilityButton.iconStart = graphic.visible ? "view-visible" : "view-hide";
-          });
-          const zoomButton = document.createElement('calcite-button');
-          zoomButton.iconStart = "magnifying-glass";
-          zoomButton.title = "Zoom To";
-          zoomButton.addEventListener('click', () => {
-            view.goTo(graphic.geometry);
-          });
-          const removeButton = document.createElement('calcite-button');
-          removeButton.iconStart = "trash";
-          removeButton.title = "Remove";
-          removeButton.addEventListener('click', () => {
-            overlapsLayer.remove(graphic);
-            overlapList.removeChild(item);
-          });
-          item.appendChild(nameInput);
-          item.appendChild(renameButton);
-          item.appendChild(visibilityButton);
-          item.appendChild(zoomButton);
-          item.appendChild(removeButton);
-          overlapList.appendChild(item);
-        }
-        function clearOverlaps() {
-          overlapsLayer.removeAll();
-          overlapList.innerHTML = '';
-        }
-        function updateOverlapSymbology() {
-          const fillColor = overlapColorPicker.value;
-          const borderColor = borderColorPicker.value;
-          overlapsLayer.graphics.forEach(graphic => {
-            graphic.symbol = new SimpleFillSymbol({
-              color: fillColor,
-              outline: new SimpleLineSymbol({
-                color: borderColor,
-                width: 2
-              })
-            });
-          });
-        }
-      });
-    });
-  });
-</script>
+        });
+    </script>
 </body>
+
 </html>

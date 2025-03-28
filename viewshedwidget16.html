@@ -1,3 +1,4 @@
+//Use This One
 <!doctype html>
 <html lang="en">
 <head>
@@ -211,6 +212,56 @@ reactiveUtils.when(
    viewshedCounter = viewshedLayer.source.viewsheds.length;
  }
 );
+                 exportButton.addEventListener("click", () => {
+           const viewshedsData = viewshedLayer.source.viewsheds.map(viewshed => ({
+             lat: viewshed.observer.y,
+             long: viewshed.observer.x,
+             height: viewshed.observer.z,
+             angle: viewshed.tilt,
+             distance: viewshed.farDistance,
+             visible: viewshed.visible
+           }));
+           const blob = new Blob([JSON.stringify(viewshedsData, null, 2)], { type: 'application/json' });
+           const url = URL.createObjectURL(blob);
+           const a = document.createElement('a');
+           a.href = url;
+           a.download = 'viewsheds.json';
+           document.body.appendChild(a);
+           a.click();
+           document.body.removeChild(a);
+           URL.revokeObjectURL(url);
+         });
+         importButton.addEventListener("click", () => {
+           const input = document.createElement('input');
+           input.type = 'file';
+           input.accept = 'application/json';
+           input.onchange = e => {
+             const file = e.target.files[0];
+             const reader = new FileReader();
+             reader.onload = event => {
+               const viewshedsData = JSON.parse(event.target.result);
+               viewshedsData.forEach(data => {
+                 const viewshed = new Viewshed({
+                   observer: {
+                     spatialReference: SpatialReference.WebMercator,
+                     x: data.long,
+                     y: data.lat,
+                     z: data.height
+                   },
+                   farDistance: data.distance,
+                   tilt: data.angle,
+                   heading: 0,
+                   horizontalFieldOfView: 85,
+                   verticalFieldOfView: 60
+                 });
+                 viewshedLayer.source.viewsheds.add(viewshed);
+                 addViewshedToList(viewshed);
+               });
+             };
+             reader.readAsText(file);
+           };
+           input.click();
+         });
          cancelButton.addEventListener("click", () => {
            stopCreating();
          });

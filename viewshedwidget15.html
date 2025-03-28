@@ -162,8 +162,10 @@
     "esri/geometry/Polygon",
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleLineSymbol",
-    "esri/geometry/geometryEngine"
-  ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Polygon, SimpleFillSymbol, SimpleLineSymbol, geometryEngine) => {
+    "esri/geometry/operators/intersectionOperator",
+    "esri/geometry/operators/geodesicBufferOperator"
+  ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, 
+      promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
     const sceneElement = document.getElementById("sceneview");
     sceneElement.addEventListener("arcgisViewReadyChange", () => {
       const view = sceneElement.view;
@@ -458,7 +460,7 @@
               const area1 = createViewshedArea(vs1);
               const area2 = createViewshedArea(vs2);
               // Find intersection
-              const intersection = geometryEngine.intersect(area1, area2);
+              const intersection = intersectionOperator.execute(area1, area2);
               if (intersection) {
                 addOverlapPolygon(intersection, `Overlap ${i+1}-${j+1}`);
               }
@@ -475,7 +477,7 @@
           };
           // Create a circle with radius = farDistance
           const radius = viewshed.farDistance;
-          const circle = geometryEngine.geodesicBuffer(center, radius, "meters");
+          const circle = geodesicBufferOperator.execute(center, radius, "meters");
           return circle;
         }
         function addOverlapPolygon(geometry, name) {

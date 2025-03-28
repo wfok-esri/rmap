@@ -190,13 +190,14 @@
             "esri/core/reactiveUtils",
             "esri/layers/GraphicsLayer",
             "esri/Graphic",
+            "esri/geometry/Point",
             "esri/geometry/Polygon",
             "esri/symbols/SimpleFillSymbol",
             "esri/symbols/SimpleLineSymbol",
             "esri/geometry/operators/intersectionOperator",
             "esri/geometry/operators/geodesicBufferOperator"
         ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference,
-            promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
+            promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Point, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
             const sceneElement = document.getElementById("sceneview");
             sceneElement.addEventListener("arcgisViewReadyChange", () => {
                 const view = sceneElement.view;
@@ -535,12 +536,11 @@
                     }
 
                     function createViewshedArea(viewshed) {
-                        const center = {
-                            type: "point",
+                        const center = new Point({
                             x: viewshed.observer.x,
                             y: viewshed.observer.y,
                             spatialReference: viewshed.observer.spatialReference
-                        };
+                        });
                         // Create a circle with radius = farDistance
                         const radius = viewshed.farDistance;
                         try {

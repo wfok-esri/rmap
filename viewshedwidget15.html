@@ -442,33 +442,63 @@
         }
         // Analysis Mode Functions
         function findOverlaps() {
-          // Clear existing overlaps
-          clearOverlaps();
-          // Get all visible viewsheds
-          const visibleViewsheds = viewshedLayer.source.viewsheds.filter(v => v.visible);
-          console.log("visibleViewsheds", visibleViewsheds);
-          console.log("visibleViewsheds.length", visibleViewsheds.length);
-          if (visibleViewsheds.length < 2) {
-            console.log("Need at least 2 visible viewsheds to find overlaps");
-            return;
-          }
-          // For simplicity, we'll just find pairwise overlaps
-          // In a real app, you might want to find intersections between all viewsheds
-          for (let i = 0; i < visibleViewsheds.length; i++) {
-            for (let j = i + 1; j < visibleViewsheds.length; j++) {
-              const vs1 = visibleViewsheds[i];
-              const vs2 = visibleViewsheds[j];
-              // Get the visible areas (simplified as circles for this example)
-              const area1 = createViewshedArea(vs1);
-              const area2 = createViewshedArea(vs2);
-              // Find intersection
-              const intersection = intersectionOperator.execute(area1, area2);
-              if (intersection) {
-                addOverlapPolygon(intersection, `Overlap ${i+1}-${j+1}`);
-              }
-            }
-          }
-        }
+ // Clear existing overlaps
+ clearOverlaps();
+ // Get all visible viewsheds
+ const visibleViewsheds = [];
+ viewshedLayer.source.viewsheds.forEach(v => {
+   if (v.visible !== false) { // Account for undefined visibility
+     visibleViewsheds.push(v);
+   }
+ });
+ console.log("Visible viewsheds count:", visibleViewsheds.length); // Debug log
+ if (visibleViewsheds.length < 2) {
+   console.log("Need at least 2 visible viewsheds to find overlaps");
+   // Add visual feedback
+   view.popup.open({
+     title: "Not Enough Viewsheds",
+     content: "You need at least 2 visible viewsheds to find overlaps.",
+     location: view.center
+   });
+   return;
+ }
+ // For pairwise overlaps
+ let overlapCount = 0;
+ for (let i = 0; i < visibleViewsheds.length; i++) {
+   for (let j = i + 1; j < visibleViewsheds.length; j++) {
+     const vs1 = visibleViewsheds[i];
+     const vs2 = visibleViewsheds[j];
+     const area1 = createViewshedArea(vs1);
+     const area2 = createViewshedArea(vs2);
+     try {
+       const intersection = intersectionOperator.execute(area1, area2);
+       if (intersection) {
+         addOverlapPolygon(intersection, `Overlap ${i+1}-${j+1}`);
+         overlapCount++;
+       }
+     } catch (e) {
+       console.warn("Error calculating intersection:", e);
+     }
+   }
+ }
+ // Provide feedback about results
+ if (overlapCount > 0) {
+   console.log(`Found ${overlapCount} overlap areas`);
+   view.popup.open({
+     title: "Overlaps Found",
+     content: `Found ${overlapCount} overlapping areas between viewsheds.`,
+     location: view.center
+   });
+ } else {
+   console.log("No overlaps found between visible viewsheds");
+   view.popup.open({
+     title: "No Overlaps",
+     content: "No overlapping areas were found between the visible viewsheds.",
+     location: view.center
+   });
+ }
+}
+        
         function createViewshedArea(viewshed) {
           // Simplified approach - create a circular area representing the viewshed
           // In a real app, you'd want to create a more accurate representation

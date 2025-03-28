@@ -446,6 +446,8 @@
           clearOverlaps();
           // Get all visible viewsheds
           const visibleViewsheds = viewshedLayer.source.viewsheds.filter(v => v.visible);
+          console.log("visibleViewsheds", visibleViewsheds);
+          console.log("visibleViewsheds.length", visibleViewsheds.length);
           if (visibleViewsheds.length < 2) {
             console.log("Need at least 2 visible viewsheds to find overlaps");
             return;

@@ -582,6 +582,7 @@
                         const radius = viewshed.farDistance;
                         try {
                             const circle = geodesicBufferOperator.execute(center, radius, "meters");
+                            debug;
                             console.log("Created buffer", circle);
                             return circle;
                         } catch (e) {

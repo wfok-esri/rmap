@@ -520,6 +520,7 @@
                                 }
                                 try {
                                     const intersection = intersectionOperator.execute(area1, area2);
+                                    console.log("intersection", intersection);
                                     if (intersection) {
                                         addOverlapPolygon(intersection, `Overlap ${i + 1}-${j + 1}`);
                                         overlapCount++;
@@ -581,8 +582,9 @@
                         // Create a circle with radius = farDistance
                         const radius = viewshed.farDistance;
                         try {
+                            debugger;
                             const circle = geodesicBufferOperator.execute(center, radius, "meters");
-                            debug;
+                            debugger;
                             console.log("Created buffer", circle);
                             return circle;
                         } catch (e) {

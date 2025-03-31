@@ -195,7 +195,9 @@
             "esri/symbols/SimpleFillSymbol",
             "esri/symbols/SimpleLineSymbol",
             "esri/geometry/operators/intersectionOperator",
-            "esri/geometry/operators/geodesicBufferOperator"
+            "esri/geometry/operators/geodesicBufferOperator",
+            "esri/geometry/operators/intersection",
+            "esri/geometry/operators/geodesicBuffer"
         ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference,
             promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Point, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
             const sceneElement = document.getElementById("sceneview");
@@ -535,11 +537,22 @@
                         // Provide feedback about results
                         if (overlapCount > 0) {
                             console.log(`Found ${overlapCount} overlap areas`);
-                            view.popup.open({
-                                title: "Overlaps Found",
-                                content: `Found ${overlapCount} overlapping areas between viewsheds.`,
-                                location: view.center
-                            });
+                            // view.popup.open({
+                            //     title: "Overlaps Found",
+                            //     content: `Found ${overlapCount} overlapping areas between viewsheds.`,
+                            //     location: view.center
+                            // });
+                            view.ui.add({
+                                type: "text",
+                                text: `Found ${overlapCount} overlapping areas between viewsheds.`,
+                                style: {
+                                    backgroundColor: "white",
+                                    padding: "10px",
+                                    borderRadius: "5px",
+                                    boxShadow: "0 0 10px rgba(0,0,0,0.5)"
+                                },
+                                position: "bottom-right"
+                            }, "alert");
                         } else {
                             console.log("No overlaps found between visible viewsheds");
                             // view.popup.open({

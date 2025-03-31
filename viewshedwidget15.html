@@ -485,7 +485,7 @@
                         });
                         console.log("Visible viewsheds count:", visibleViewsheds.length); // Debug log
                         if (visibleViewsheds.length < 2) {
-                            console.log("Need at least 2 visible viewsheds to find overlaps");
+                            //console.log("Need at least 2 visible viewsheds to find overlaps");
                             // Add visual feedback
                             view.popup.open({
                                 title: "Not Enough Viewsheds",
@@ -519,14 +519,14 @@
                         }
                         // Provide feedback about results
                         if (overlapCount > 0) {
-                            console.log(`Found ${overlapCount} overlap areas`);
+                            //console.log(`Found ${overlapCount} overlap areas`);
                             view.popup.open({
                                 title: "Overlaps Found",
                                 content: `Found ${overlapCount} overlapping areas between viewsheds.`,
                                 location: view.center
                             });
                         } else {
-                            console.log("No overlaps found between visible viewsheds");
+                            //console.log("No overlaps found between visible viewsheds");
                             view.popup.open({
                                 title: "No Overlaps",
                                 content: "No overlapping areas were found between the visible viewsheds.",

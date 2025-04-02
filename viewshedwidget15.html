@@ -520,20 +520,35 @@
                                     continue;
                                 }
                                 try {
-                                    const intersection = geometryEngine.intersect(area1, area2);
-                                    //const intersection = intersectionOperator.execute(area1, area2);
-                                    console.log("intersection", intersection);
-                                    if (intersection) {
-                                        addOverlapPolygon(intersection, `Overlap ${i + 1}-${j + 1}`);
+                                    //Method1: Use geometryEngine
+                                    // const intersection = geometryEngine.intersect(area1, area2);
+                                    // //const intersection = intersectionOperator.execute(area1, area2);
+                                    // console.log("intersection", intersection);
+                                    // if (intersection) {
+                                    //     addOverlapPolygon(intersection, `Overlap ${i + 1}-${j + 1}`);
+                                    //     overlapCount++;
+                                    // }
+                                    
+                                    //Method2: Use intersectionOperator
+                                    const intersectionParams = {
+                                            geometries: [area1, area2],
+                                            spatialReference: area1.spatialReference
+                                    };
+                                    const intersectionResults = intersectionOperator.execute(intersectionParams);
+                                    // intersectionResults will be an array of geometries
+                                    console.log("intersectionResults", intersectionResults);
+                                    if (intersectionResults) {
+                                        addOverlapPolygon(intersectionResults, `Overlap ${i + 1}-${j + 1}`);
                                         overlapCount++;
                                     }
+                                    
                                 } catch (e) {
                                     console.warn("Error calculating intersection:", e);
                                 }
                             }
                         }
 
-                        view.ui.remove("alert");
+                        //view.ui.remove("alert");
                         
                         // Provide feedback about results
                         if (overlapCount > 0) {
@@ -584,12 +599,24 @@
                         // Create a circle with radius = farDistance
                         const radius = viewshed.farDistance;
                         try {
+                            //Method1: Use geometryEngine
+                            // debugger;
+                            // const circle = geometryEngine.geodesicBuffer(center, radius, "meters");
+                            // //const circle = geodesicBufferOperator.execute(center, radius, "meters");
+                            // console.log("Created buffer", circle);
+                            // return circle;
+                            
+                            //Method2: Use geodesicBufferOperator
                             debugger;
-                            const circle = geometryEngine.geodesicBuffer(center, radius, "meters");
-                            //const circle = geodesicBufferOperator.execute(center, radius, "meters");
-                            debugger;
-                            console.log("Created buffer", circle);
-                            return circle;
+                            const bufferParams = {
+                                geometries: [center],  // Note: accepts an array
+                                distances: [radius],  // Note: accepts an array
+                                unit: "meters",
+                                unionResults: true,
+                                spatialReference: center.spatialReference
+                            };
+                            const result = geodesicBufferOperator.execute(bufferParams);
+                            return result[0]; // Returns an array, so we take first element
                         } catch (e) {
                             console.warn("Error creating buffer:", e);
                             return null;

@@ -616,6 +616,7 @@
                                 spatialReference: center.spatialReference
                             };
                             const result = geodesicBufferOperator.execute(bufferParams);
+                            console.log("Created buffer result", result);
                             return result[0]; // Returns an array, so we take first element
                         } catch (e) {
                             console.warn("Error creating buffer:", e);

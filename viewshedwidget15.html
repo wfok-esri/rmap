@@ -195,9 +195,10 @@
             "esri/symbols/SimpleFillSymbol",
             "esri/symbols/SimpleLineSymbol",
             "esri/geometry/operators/intersectionOperator",
-            "esri/geometry/operators/geodesicBufferOperator"
+            "esri/geometry/operators/geodesicBufferOperator",
+            "esri/geometry/geometryEngine"
         ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference,
-            promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Point, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator) => {
+            promiseUtils, reactiveUtils, GraphicsLayer, Graphic, Point, Polygon, SimpleFillSymbol, SimpleLineSymbol, intersectionOperator, geodesicBufferOperator, geometryEngine) => {
             const sceneElement = document.getElementById("sceneview");
             sceneElement.addEventListener("arcgisViewReadyChange", () => {
                 const view = sceneElement.view;
@@ -519,7 +520,8 @@
                                     continue;
                                 }
                                 try {
-                                    const intersection = intersectionOperator.execute(area1, area2);
+                                    const intersection = geometryEngine.intersect(area1, area2);
+                                    //const intersection = intersectionOperator.execute(area1, area2);
                                     console.log("intersection", intersection);
                                     if (intersection) {
                                         addOverlapPolygon(intersection, `Overlap ${i + 1}-${j + 1}`);
@@ -583,7 +585,8 @@
                         const radius = viewshed.farDistance;
                         try {
                             debugger;
-                            const circle = geodesicBufferOperator.execute(center, radius, "meters");
+                            const circle = geometryEngine.geodesicBuffer(center, radius, "meters");
+                            //const circle = geodesicBufferOperator.execute(center, radius, "meters");
                             debugger;
                             console.log("Created buffer", circle);
                             return circle;

@@ -1,7 +1,7 @@
-// Improve the overlap analysis to consider:
-// 1. Actual viewshed angles (not 360° circles)
-// 2. 3D visibility (not just 2D ground areas)
-// 3. Only visible (green) areas in the overlap calculation
+// Try to improve the overlap analysis to consider:
+// 1. Actual viewshed angles (not 360° circles) - done
+// 2. 3D visibility (not just 2D ground areas) - not yet
+// 3. Only visible (green) areas in the overlap calculation - not yet
 <!doctype html>
 <html lang="en">
 
@@ -951,8 +951,9 @@
                         nameInput.value = name;
                         nameInput.disabled = true;
 
-                        // Add buttons similar to your other lists (rename, visibility, zoom, remove)
-                        // ... (similar to your existing addOverlapToList function)
+                        // Add buttons similar to other lists (rename, visibility, zoom, remove)
+                        // Similar to addOverlapToList function
+                        // To be working on
 
                         visibleOverlapList.appendChild(item);
                     }

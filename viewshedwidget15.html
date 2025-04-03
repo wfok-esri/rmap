@@ -494,7 +494,7 @@
                             //     content: "You need at least 2 visible viewsheds to find overlaps.",
                             //     location: view.center
                             // });
-                            view.ui.add({
+                            view.ui.add({ // view.ui currently not working, need fix later
                                 type: "text",
                                 text: "You need at least 2 visible viewsheds to find overlaps.",
                                 style: {
@@ -521,7 +521,7 @@
                                     continue;
                                 }
                                 try {
-                                    //Method1: Use geometryEngine
+                                    //Method1: Use geometryEngine (Not suggest, this api will be deprecated in version 4.32)
                                     const intersection = geometryEngine.intersect(area1, area2);
                                     //const intersection = intersectionOperator.execute(area1, area2);
                                     console.log("intersection", intersection);
@@ -530,7 +530,7 @@
                                         overlapCount++;
                                     }
                                     
-                                    //Method2: Use intersectionOperator
+                                    //Method2: Use intersectionOperator (Have error, need fix)
                                     // const intersectionParams = {
                                     //         geometries: [area1, area2],
                                     //         spatialReference: area1.spatialReference

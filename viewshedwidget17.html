@@ -51,6 +51,7 @@
             right: var(--calcite-spacing-xxl);
             top: calc(var(--calcite-spacing-xxl) + 300px);
             cursor: move;
+            z-index: 3; /* Highest priority */
         }
 
         #overlapListCard {
@@ -59,14 +60,16 @@
             right: var(--calcite-spacing-xxl);
             top: calc(var(--calcite-spacing-xxl) + 600px);
             cursor: move;
+            z-index: 2; /* Middle priority */
         }
         
         #visibleOverlapListCard {
             position: absolute;
             width: 270px;
             right: var(--calcite-spacing-xxl);
-            top: calc(var(--calcite-spacing-xxl) + 600px);
+            top: calc(var(--calcite-spacing-xxl) + 900px);
             cursor: move;
+            z-index: 1; /* Lowest priority */
         }
         
         #viewshedControls calcite-button {
@@ -128,6 +131,10 @@
             display: inline-block;
             margin-left: 5px;
             cursor: pointer;
+        }
+        [dragging] {
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            transition: none;
         }
     </style>
     <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
@@ -287,30 +294,75 @@
                     let isAnalysisMode = false;
                     let isDragging = false;
                     let offsetX, offsetY;
-                    // Make cards draggable
+                    
+                    // Make cards draggable(New)
+                    let draggedCard = null;
                     function setupDraggableCard(card) {
                         card.addEventListener("mousedown", (e) => {
                             if (e.target === card || e.target.closest("calcite-card-title")) {
-                                isDragging = true;
-                                offsetX = e.clientX - card.offsetLeft;
-                                offsetY = e.clientY - card.offsetTop;
+                                   isDragging = true;
+                                   draggedCard = card;
+                                  offsetX = e.clientX - card.getBoundingClientRect().left;
+                                   offsetY = e.clientY - card.getBoundingClientRect().top;
+                
+                                   card.setAttribute('dragging', '');
+                                   card.style.zIndex = "10";
+                             }
+                          });
+                    }
+
+                      document.addEventListener("mousemove", (e) => {
+                            if (isDragging && draggedCard) {
+                                draggedCard.style.left = `${e.clientX - offsetX}px`;
+                                draggedCard.style.top = `${e.clientY - offsetY}px`;
                             }
                         });
-                    }
-                    setupDraggableCard(viewshedListCard);
-                    setupDraggableCard(overlapListCard);
-                    setupDraggableCard(visibleOverlapListCard);
-                    document.addEventListener("mousemove", (e) => {
-                        if (isDragging) {
-                            viewshedListCard.style.left = `${e.clientX - offsetX}px`;
-                            viewshedListCard.style.top = `${e.clientY - offsetY}px`;
-                            overlapListCard.style.left = `${e.clientX - offsetX}px`;
-                            overlapListCard.style.top = `${e.clientY - offsetY}px`;
-                        }
-                    });
-                    document.addEventListener("mouseup", () => {
-                        isDragging = false;
-                    });
+
+                        document.addEventListener("mouseup", () => {
+                            if (draggedCard) {
+                                draggedCard.removeAttribute('dragging');
+                                if (draggedCard.id === "viewshedListCard") {
+                                    draggedCard.style.zIndex = "3";
+                                } else if (draggedCard.id === "overlapListCard") {
+                                    draggedCard.style.zIndex = "2";
+                                } else if (draggedCard.id === "visibleOverlapListCard") {
+                                    draggedCard.style.zIndex = "1";
+                                }
+                            }
+                            isDragging = false;
+                            draggedCard = null;
+                        });
+
+                        // Initialize all cards
+                        setupDraggableCard(viewshedListCard);
+                        setupDraggableCard(overlapListCard);
+                        setupDraggableCard(visibleOverlapListCard);
+                    
+                    // // Make cards draggable
+                    // function setupDraggableCard(card) {
+                    //     card.addEventListener("mousedown", (e) => {
+                    //         if (e.target === card || e.target.closest("calcite-card-title")) {
+                    //             isDragging = true;
+                    //             offsetX = e.clientX - card.offsetLeft;
+                    //             offsetY = e.clientY - card.offsetTop;
+                    //         }
+                    //     });
+                    // }
+                    // setupDraggableCard(viewshedListCard);
+                    // setupDraggableCard(overlapListCard);
+                    // setupDraggableCard(visibleOverlapListCard);
+                    // document.addEventListener("mousemove", (e) => {
+                    //     if (isDragging) {
+                    //         viewshedListCard.style.left = `${e.clientX - offsetX}px`;
+                    //         viewshedListCard.style.top = `${e.clientY - offsetY}px`;
+                    //         overlapListCard.style.left = `${e.clientX - offsetX}px`;
+                    //         overlapListCard.style.top = `${e.clientY - offsetY}px`;
+                    //     }
+                    // });
+                    // document.addEventListener("mouseup", () => {
+                    //     isDragging = false;
+                    // });
+                    
                     // Mode toggle
                     modeToggleButton.addEventListener("click", () => {
                         isAnalysisMode = !isAnalysisMode;

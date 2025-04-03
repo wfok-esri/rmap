@@ -954,6 +954,39 @@
                         // Add buttons similar to other lists (rename, visibility, zoom, remove)
                         // Similar to addOverlapToList function
                         // To be working on
+                        const renameButton = document.createElement('calcite-button');
+                        renameButton.iconStart = "pencil";
+                        renameButton.title = "Rename";
+                        renameButton.addEventListener('click', () => {
+                            nameInput.disabled = !nameInput.disabled;
+                            if (!nameInput.disabled) nameInput.focus();
+                            graphic.attributes.name = nameInput.value;
+                        });
+                        const visibilityButton = document.createElement('calcite-button');
+                        visibilityButton.iconStart = "view-visible";
+                        visibilityButton.title = "Toggle Visibility";
+                        visibilityButton.addEventListener('click', () => {
+                            graphic.visible = !graphic.visible;
+                            visibilityButton.iconStart = graphic.visible ? "view-visible" : "view-hide";
+                        });
+                        const zoomButton = document.createElement('calcite-button');
+                        zoomButton.iconStart = "magnifying-glass";
+                        zoomButton.title = "Zoom To";
+                        zoomButton.addEventListener('click', () => {
+                            view.goTo(graphic.geometry);
+                        });
+                        const removeButton = document.createElement('calcite-button');
+                        removeButton.iconStart = "trash";
+                        removeButton.title = "Remove";
+                        removeButton.addEventListener('click', () => {
+                            overlapsLayer.remove(graphic);
+                            overlapList.removeChild(item);
+                        });
+                        item.appendChild(nameInput);
+                        item.appendChild(renameButton);
+                        item.appendChild(visibilityButton);
+                        item.appendChild(zoomButton);
+                        item.appendChild(removeButton);
 
                         visibleOverlapList.appendChild(item);
                     }

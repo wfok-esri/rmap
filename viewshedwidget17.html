@@ -378,7 +378,8 @@
                         findOverlaps();
                     });
                     // Find overlaps of visible area between viewsheds
-                    findOverlapsButton.addEventListener("click", () => {
+                    findVisibleOverlapsButton.addEventListener("click", () => {
+                        debugger;
                         findVisibleOverlaps();
                     });
                     // Clear overlap polygons
@@ -846,7 +847,9 @@
 
                                 try {
                                     // Find intersection of visible areas
+                                    debugger;
                                     const intersection = geometryEngine.intersect(visibleArea1, visibleArea2);
+                                    console.log("intersection", intersection);
 
                                     if (intersection) {
                                         addVisibleOverlapPolygon(intersection, `Visible Overlap ${i + 1}-${j + 1}`);
@@ -867,11 +870,7 @@
 
                     // Helper function to get visible area polygon for a viewshed
                     async function getVisibleArea(viewshed, analysisView) {
-                        // This is a simplified approach - you may need to adjust based on your exact needs
-
-                        // Get the viewshed's visible area (green part)
-                        // Note: This is a complex operation that may require server-side analysis
-                        // For client-side approximation, we'll use the viewshed's parameters
+                        // Still testing
 
                         // Create a sector polygon based on viewshed parameters
                         const center = new Point({

@@ -98,10 +98,6 @@
         }
 
         .color-picker {
-            position: absolute;
-            right: 0;
-            top: calc(100% + 5px);
-            z-index: 1000;
             background: white;
             padding: 10px;
             border: 1px solid #ddd;
@@ -109,12 +105,22 @@
             width: 200px;
             box-sizing: border-box;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            display: none;
         }
 
         .color-picker label {
             font-size: 12px;
             margin-right: 5px;
+            display: inline-block;
+            width: 80px;
+        }
+
+        .color-picker input[type="color"] {
+            vertical-align: middle;
+        }
+
+        .color-picker input[type="range"] {
+            width: 100px;
+            margin-left: 5px;
         }
 
         .viewshed-item calcite-button {
@@ -366,6 +372,93 @@
                         contentContainer.style.alignItems = 'center';
                         contentContainer.style.width = '100%';
 
+                        // Get or create the shared color picker container
+                        let colorPickerContainer = document.getElementById('colorPickerContainer');
+                        if (!colorPickerContainer) {
+                            colorPickerContainer = document.createElement('div');
+                            colorPickerContainer.id = 'colorPickerContainer';
+                            colorPickerContainer.style.position = 'absolute';
+                            colorPickerContainer.style.display = 'none';
+                            colorPickerContainer.style.zIndex = '1000';
+                            document.body.appendChild(colorPickerContainer);
+                        }
+
+
+
+
+
+
+                        // Create color picker content
+                        const colorPickerContent = document.createElement('div');
+                        colorPickerContent.className = 'color-picker';
+                        colorPickerContent.style.display = 'block'; // Always visible when shown
+
+                        // ... (keep all your existing color picker content creation code)
+
+                        // Color button click handler
+                        colorButton.addEventListener('click', (e) => {
+                            e.stopPropagation();
+
+                            // Hide any other visible pickers
+                            document.querySelectorAll('.color-picker').forEach(picker => {
+                                picker.style.display = 'none';
+                            });
+
+                            // Position and show the picker
+                            const buttonRect = colorButton.getBoundingClientRect();
+                            colorPickerContent.style.display = 'block';
+
+                            // Clear previous content and add new
+                            colorPickerContainer.innerHTML = '';
+                            colorPickerContainer.appendChild(colorPickerContent);
+                            colorPickerContainer.style.display = 'block';
+
+                            // Position based on available space
+                            if (buttonRect.bottom + colorPickerContent.offsetHeight > window.innerHeight) {
+                                // Not enough space below - show above
+                                colorPickerContainer.style.top = (buttonRect.top - colorPickerContent.offsetHeight - 5) + 'px';
+                            } else {
+                                // Enough space - show below
+                                colorPickerContainer.style.top = (buttonRect.bottom + 5) + 'px';
+                            }
+                            colorPickerContainer.style.left = (buttonRect.left - colorPickerContent.offsetWidth + buttonRect.width) + 'px';
+
+                            // Store reference to current viewshed
+                            colorPickerContainer.currentViewshed = viewshed;
+                        });
+
+                        // Apply color changes
+                        applyColorButton.addEventListener('click', () => {
+                            const hexColor = visibleColorInput.value;
+                            const transparency = transparencyInput.value / 100;
+                            const rgb = hexToRgb(hexColor);
+
+                            const currentViewshed = colorPickerContainer.currentViewshed;
+                            if (currentViewshed) {
+                                currentViewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
+                                currentViewshed.obstructedColor = [0, 0, 0, 0];
+
+                                // Force refresh
+                                viewshedLayer.source.viewsheds.remove(currentViewshed);
+                                viewshedLayer.source.viewsheds.add(currentViewshed);
+                            }
+
+                            colorPickerContainer.style.display = 'none';
+                        });
+
+                        // Close picker when clicking elsewhere
+                        document.addEventListener('click', (e) => {
+                            if (!e.target.closest('.color-picker') && !e.target.closest('.color-button')) {
+                                colorPickerContainer.style.display = 'none';
+                            }
+                        });
+
+
+
+
+
+
+
                         // Color control container
                         const colorControlContainer = document.createElement('div');
                         colorControlContainer.style.position = 'relative';
@@ -568,6 +661,7 @@
             });
         });
     </script>
+    <div id="colorPickerContainer" style="position: absolute; display: none; z-index: 1000;"></div>
 </body>
 
 </html>

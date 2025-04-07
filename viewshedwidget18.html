@@ -100,7 +100,7 @@
         .color-picker {
             position: absolute;
             right: 0;
-            top: 100%;
+            top: calc(100% + 5px);
             z-index: 1000;
             background: white;
             padding: 10px;
@@ -109,6 +109,7 @@
             width: 200px;
             box-sizing: border-box;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            display: none;
         }
 
         .color-picker label {
@@ -425,36 +426,31 @@
 
                         // In the addViewshedToList function, update the color button click handler:
                         colorButton.addEventListener('click', (e) => {
-                            // Close any other open color pickers first
+                            // Close any other open color pickers
                             document.querySelectorAll('.color-picker').forEach(picker => {
-                                if (picker !== colorPicker) {
-                                    picker.style.display = 'none';
-                                }
+                                if (picker !== colorPicker) picker.style.display = 'none';
                             });
 
-                            // Toggle this color picker
-                            if (colorPicker.style.display === 'none' || !colorPicker.style.display) {
-                                colorPicker.style.display = 'block';
+                            // Toggle this picker
+                            const shouldShow = colorPicker.style.display !== 'block';
+                            colorPicker.style.display = shouldShow ? 'block' : 'none';
 
-                                // Position it absolutely relative to the viewshed-item
-                                const itemRect = item.getBoundingClientRect();
-                                const listRect = viewshedList.getBoundingClientRect();
+                            // Position it based on available space
+                            if (shouldShow) {
+                                const buttonRect = colorButton.getBoundingClientRect();
+                                const viewportHeight = window.innerHeight;
 
-                                // Check if there's enough space below
-                                if (itemRect.bottom + colorPicker.offsetHeight > listRect.bottom) {
-                                    // Not enough space below, show above
+                                if (buttonRect.bottom + colorPicker.offsetHeight > viewportHeight) {
+                                    // Not enough space below - show above
                                     colorPicker.style.top = 'auto';
                                     colorPicker.style.bottom = '100%';
                                 } else {
-                                    // Enough space below, show below
-                                    colorPicker.style.top = '100%';
+                                    // Enough space - show below
+                                    colorPicker.style.top = 'calc(100% + 5px)';
                                     colorPicker.style.bottom = 'auto';
                                 }
-                            } else {
-                                colorPicker.style.display = 'none';
                             }
 
-                            // Prevent the click from bubbling up to document
                             e.stopPropagation();
                         });
 
@@ -474,8 +470,6 @@
                         const colorPickerContainer = document.createElement('div');
                         colorPickerContainer.style.position = 'relative';
                         colorPickerContainer.style.display = 'inline-block';
-
-                        // ... existing color picker code ...
 
                         colorPickerContainer.appendChild(colorButton);
                         colorPickerContainer.appendChild(colorPicker);
@@ -536,12 +530,12 @@
                         });
                         item.appendChild(nameInput);
                         item.appendChild(renameButton);
-                        item.appendChild(colorButton);
+                        //item.appendChild(colorButton);
                         item.appendChild(visibilityButton);
                         //item.appendChild(hideshowButton);
                         item.appendChild(zoomButton);
                         item.appendChild(removeButton);
-                        item.appendChild(colorPicker);
+                        //item.appendChild(colorPicker);
                         viewshedList.appendChild(item);
                     }
                     // Helper functions for color conversion

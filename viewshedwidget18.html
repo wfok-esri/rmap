@@ -332,6 +332,13 @@
                         cancelButton.style.display = creating ? "flex" : "none";
                     }
                     function addViewshedToList(viewshed) {
+                        // Ensure viewshed has visibleColor property
+                        if (!viewshed.visibleColor) {
+                            viewshed.visibleColor = [0, 255, 0, 0.5]; // Default green with 50% opacity
+                        }
+                        if (!viewshed.obstructedColor) {
+                            viewshed.obstructedColor = [0, 0, 0, 0]; // Fully transparent
+                        }
                         const item = document.createElement('div');
                         item.className = 'viewshed-item';
                         const nameInput = document.createElement('calcite-input');
@@ -465,20 +472,21 @@
                     }
                     // Helper functions for color conversion
                     function rgbToHex(rgbArray) {
-                        const r = Math.round(rgbArray[0]);
-                        const g = Math.round(rgbArray[1]);
-                        const b = Math.round(rgbArray[2]);
-                        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-                    }
+    if (!rgbArray || rgbArray.length < 3) return "#00ff00"; // Default green if invalid
+    const r = Math.round(rgbArray[0]);
+    const g = Math.round(rgbArray[1]);
+    const b = Math.round(rgbArray[2]);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
 
-                    function hexToRgb(hex) {
-                        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                        return result ? {
-                            r: parseInt(result[1], 16),
-                            g: parseInt(result[2], 16),
-                            b: parseInt(result[3], 16)
-                        } : { r: 0, g: 0, b: 0 };
-                    }
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 0, g: 255, b: 0 }; // Default to green if invalid
+}
                 });
             });
         });

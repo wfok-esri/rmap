@@ -48,6 +48,12 @@
             right: var(--calcite-spacing-xxl);
             top: calc(var(--calcite-spacing-xxl) + 300px);
             cursor: move;
+            z-index: 100;
+            /* Ensure it's above other elements */
+            background: white;
+            /* Solid background so color picker shows properly */
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         #viewshedControls calcite-button {
@@ -61,6 +67,10 @@
 
         #viewshedList {
             margin-top: 10px;
+            position: relative;
+            overflow: visible;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .viewshed-item {
@@ -68,6 +78,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
+            position: relative;
         }
 
         .viewshed-name {
@@ -87,12 +98,17 @@
         }
 
         .color-picker {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            z-index: 1000;
             background: white;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            width: 100%;
+            width: 200px;
             box-sizing: border-box;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
         .color-picker label {
@@ -407,6 +423,64 @@
                             colorPicker.style.display = 'none';
                         });
 
+                        // In the addViewshedToList function, update the color button click handler:
+                        colorButton.addEventListener('click', (e) => {
+                            // Close any other open color pickers first
+                            document.querySelectorAll('.color-picker').forEach(picker => {
+                                if (picker !== colorPicker) {
+                                    picker.style.display = 'none';
+                                }
+                            });
+
+                            // Toggle this color picker
+                            if (colorPicker.style.display === 'none' || !colorPicker.style.display) {
+                                colorPicker.style.display = 'block';
+
+                                // Position it absolutely relative to the viewshed-item
+                                const itemRect = item.getBoundingClientRect();
+                                const listRect = viewshedList.getBoundingClientRect();
+
+                                // Check if there's enough space below
+                                if (itemRect.bottom + colorPicker.offsetHeight > listRect.bottom) {
+                                    // Not enough space below, show above
+                                    colorPicker.style.top = 'auto';
+                                    colorPicker.style.bottom = '100%';
+                                } else {
+                                    // Enough space below, show below
+                                    colorPicker.style.top = '100%';
+                                    colorPicker.style.bottom = 'auto';
+                                }
+                            } else {
+                                colorPicker.style.display = 'none';
+                            }
+
+                            // Prevent the click from bubbling up to document
+                            e.stopPropagation();
+                        });
+
+                        // Add click handler to document to close color pickers when clicking elsewhere
+                        document.addEventListener('click', () => {
+                            document.querySelectorAll('.color-picker').forEach(picker => {
+                                picker.style.display = 'none';
+                            });
+                        });
+
+                        // Prevent color picker clicks from closing the picker
+                        colorPicker.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+
+                        // Inside addViewshedToList, modify the color picker creation:
+                        const colorPickerContainer = document.createElement('div');
+                        colorPickerContainer.style.position = 'relative';
+                        colorPickerContainer.style.display = 'inline-block';
+
+                        // ... existing color picker code ...
+
+                        colorPickerContainer.appendChild(colorButton);
+                        colorPickerContainer.appendChild(colorPicker);
+                        item.appendChild(colorPickerContainer);
+
                         const renameButton = document.createElement('calcite-button');
                         renameButton.iconStart = "pencil";
                         renameButton.title = "Rename";
@@ -472,21 +546,21 @@
                     }
                     // Helper functions for color conversion
                     function rgbToHex(rgbArray) {
-    if (!rgbArray || rgbArray.length < 3) return "#00ff00"; // Default green if invalid
-    const r = Math.round(rgbArray[0]);
-    const g = Math.round(rgbArray[1]);
-    const b = Math.round(rgbArray[2]);
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
+                        if (!rgbArray || rgbArray.length < 3) return "#00ff00"; // Default green if invalid
+                        const r = Math.round(rgbArray[0]);
+                        const g = Math.round(rgbArray[1]);
+                        const b = Math.round(rgbArray[2]);
+                        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+                    }
 
-function hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-    } : { r: 0, g: 255, b: 0 }; // Default to green if invalid
-}
+                    function hexToRgb(hex) {
+                        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                        return result ? {
+                            r: parseInt(result[1], 16),
+                            g: parseInt(result[2], 16),
+                            b: parseInt(result[3], 16)
+                        } : { r: 0, g: 255, b: 0 }; // Default to green if invalid
+                    }
                 });
             });
         });

@@ -356,20 +356,34 @@
                         if (!viewshed.obstructedColor) {
                             viewshed.obstructedColor = [0, 0, 0, 0]; // Fully transparent
                         }
+
                         const item = document.createElement('div');
                         item.className = 'viewshed-item';
-                        const nameInput = document.createElement('calcite-input');
-                        nameInput.className = 'viewshed-name';
-                        nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
-                        nameInput.disabled = true;
 
-                        // Color picker container (initially hidden)
+                        // Create a container for the name and buttons
+                        const contentContainer = document.createElement('div');
+                        contentContainer.style.display = 'flex';
+                        contentContainer.style.alignItems = 'center';
+                        contentContainer.style.width = '100%';
+
+                        // Color control container
+                        const colorControlContainer = document.createElement('div');
+                        colorControlContainer.style.position = 'relative';
+                        colorControlContainer.style.display = 'inline-block';
+                        colorControlContainer.style.marginRight = '10px';
+
+                        // Color button
+                        const colorButton = document.createElement('calcite-button');
+                        colorButton.iconStart = "palette";
+                        colorButton.title = "Change Color";
+                        colorButton.scale = "s";
+
+                        // Color picker
                         const colorPicker = document.createElement('div');
                         colorPicker.className = 'color-picker';
                         colorPicker.style.display = 'none';
-                        colorPicker.style.marginTop = '5px';
 
-                        // Visible color picker
+                        // Color picker content
                         const visibleColorLabel = document.createElement('label');
                         visibleColorLabel.textContent = 'Visible Color:';
                         const visibleColorInput = document.createElement('input');
@@ -377,7 +391,6 @@
                         visibleColorInput.value = rgbToHex(viewshed.visibleColor);
                         visibleColorInput.style.marginLeft = '5px';
 
-                        // Transparency slider
                         const transparencyLabel = document.createElement('label');
                         transparencyLabel.textContent = 'Transparency:';
                         const transparencyInput = document.createElement('input');
@@ -388,7 +401,6 @@
                         transparencyInput.style.width = '100px';
                         transparencyInput.style.marginLeft = '5px';
 
-                        // Apply button
                         const applyColorButton = document.createElement('calcite-button');
                         applyColorButton.textContent = 'Apply';
                         applyColorButton.scale = 's';
@@ -400,92 +412,33 @@
                         colorPicker.appendChild(transparencyInput);
                         colorPicker.appendChild(applyColorButton);
 
-                        // Color toggle button
-                        const colorButton = document.createElement('calcite-button');
-                        colorButton.iconStart = "palette";
-                        colorButton.title = "Change Color";
-                        colorButton.addEventListener('click', () => {
-                            colorPicker.style.display = colorPicker.style.display === 'none' ? 'block' : 'none';
-                        });
+                        // Name input
+                        const nameInput = document.createElement('calcite-input');
+                        nameInput.className = 'viewshed-name';
+                        nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
+                        nameInput.disabled = true;
+                        nameInput.style.flexGrow = '1';
 
-                        // Apply color changes
-                        applyColorButton.addEventListener('click', () => {
-                            const hexColor = visibleColorInput.value;
-                            const transparency = transparencyInput.value / 100;
-                            const rgb = hexToRgb(hexColor);
+                        // Other buttons container
+                        const buttonsContainer = document.createElement('div');
+                        buttonsContainer.style.display = 'flex';
+                        buttonsContainer.style.marginLeft = '10px';
 
-                            viewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
-                            viewshed.obstructedColor = [0, 0, 0, 0]; // Keep obstructed areas transparent
-
-                            // Force refresh
-                            viewshedLayer.source.viewsheds.remove(viewshed);
-                            viewshedLayer.source.viewsheds.add(viewshed);
-
-                            colorPicker.style.display = 'none';
-                        });
-
-                        // In the addViewshedToList function, update the color button click handler:
-                        colorButton.addEventListener('click', (e) => {
-                            // Close any other open color pickers
-                            document.querySelectorAll('.color-picker').forEach(picker => {
-                                if (picker !== colorPicker) picker.style.display = 'none';
-                            });
-
-                            // Toggle this picker
-                            const shouldShow = colorPicker.style.display !== 'block';
-                            colorPicker.style.display = shouldShow ? 'block' : 'none';
-
-                            // Position it based on available space
-                            if (shouldShow) {
-                                const buttonRect = colorButton.getBoundingClientRect();
-                                const viewportHeight = window.innerHeight;
-
-                                if (buttonRect.bottom + colorPicker.offsetHeight > viewportHeight) {
-                                    // Not enough space below - show above
-                                    colorPicker.style.top = 'auto';
-                                    colorPicker.style.bottom = '100%';
-                                } else {
-                                    // Enough space - show below
-                                    colorPicker.style.top = 'calc(100% + 5px)';
-                                    colorPicker.style.bottom = 'auto';
-                                }
-                            }
-
-                            e.stopPropagation();
-                        });
-
-                        // Add click handler to document to close color pickers when clicking elsewhere
-                        document.addEventListener('click', () => {
-                            document.querySelectorAll('.color-picker').forEach(picker => {
-                                picker.style.display = 'none';
-                            });
-                        });
-
-                        // Prevent color picker clicks from closing the picker
-                        colorPicker.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                        });
-
-                        // Inside addViewshedToList, modify the color picker creation:
-                        const colorPickerContainer = document.createElement('div');
-                        colorPickerContainer.style.position = 'relative';
-                        colorPickerContainer.style.display = 'inline-block';
-
-                        colorPickerContainer.appendChild(colorButton);
-                        colorPickerContainer.appendChild(colorPicker);
-                        item.appendChild(colorPickerContainer);
-
+                        // Rename button
                         const renameButton = document.createElement('calcite-button');
                         renameButton.iconStart = "pencil";
                         renameButton.title = "Rename";
+                        renameButton.scale = "s";
                         renameButton.addEventListener('click', () => {
                             nameInput.disabled = !nameInput.disabled;
                             if (!nameInput.disabled) nameInput.focus();
                         });
-                        //visibilityButton remove/re-add a viewshed from/to the viewshedLayer.source.viewsheds collection to do the "Hide" and "Show" action on scene
+
+                        // Visibility button
                         const visibilityButton = document.createElement('calcite-button');
                         visibilityButton.iconStart = "view-visible";
                         visibilityButton.title = "Toggle Visibility";
+                        visibilityButton.scale = "s";
                         visibilityButton.addEventListener('click', () => {
                             if (viewshedLayer.source.viewsheds.includes(viewshed)) {
                                 viewshedLayer.source.viewsheds.remove(viewshed);
@@ -495,48 +448,104 @@
                                 visibilityButton.iconStart = "view-visible";
                             }
                         });
-                        //hideshowButton will control the visibilty of all viewsheds in viewshed list, not yet figure out how to make it only control individual viewshed, maybe ViewshedLayerView
-                        const hideshowButton = document.createElement('calcite-button');
-                        hideshowButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
-                        hideshowButton.title = viewshedLayer.visible ? "Show" : "Hide";
-                        hideshowButton.addEventListener('click', () => {
-                            viewshedLayer.visible = !viewshedLayer.visible;
-                            console.log("hidebtn_viewshedLayer.visible:", viewshedLayer.visible);
-                            hideshowButton.iconStart = viewshedLayer.visible ? "view-visible" : "view-hide";
-                            hideshowButton.title = viewshedLayer.visible ? "Show" : "Hide";
-                        });
+
+                        // Zoom button
                         const zoomButton = document.createElement('calcite-button');
                         zoomButton.iconStart = "magnifying-glass";
                         zoomButton.title = "Zoom To";
+                        zoomButton.scale = "s";
                         zoomButton.addEventListener('click', () => {
                             const camera = new Camera({
                                 position: {
                                     spatialReference: SpatialReference.WebMercator,
                                     x: viewshed.observer.x,
                                     y: viewshed.observer.y,
-                                    z: viewshed.observer.z + 1000 // Adjust the height as needed
+                                    z: viewshed.observer.z + 1000
                                 },
                                 tilt: 0,
                                 heading: 0
                             });
                             view.goTo(camera);
                         });
+
+                        // Remove button
                         const removeButton = document.createElement('calcite-button');
                         removeButton.iconStart = "trash";
                         removeButton.title = "Remove";
+                        removeButton.scale = "s";
                         removeButton.addEventListener('click', () => {
                             viewshedLayer.source.viewsheds.remove(viewshed);
                             viewshedList.removeChild(item);
                         });
-                        item.appendChild(nameInput);
-                        item.appendChild(renameButton);
-                        //item.appendChild(colorButton);
-                        item.appendChild(visibilityButton);
-                        //item.appendChild(hideshowButton);
-                        item.appendChild(zoomButton);
-                        item.appendChild(removeButton);
-                        //item.appendChild(colorPicker);
+
+                        // Assemble the elements
+                        colorControlContainer.appendChild(colorButton);
+                        colorControlContainer.appendChild(colorPicker);
+
+                        buttonsContainer.appendChild(renameButton);
+                        buttonsContainer.appendChild(visibilityButton);
+                        buttonsContainer.appendChild(zoomButton);
+                        buttonsContainer.appendChild(removeButton);
+
+                        contentContainer.appendChild(colorControlContainer);
+                        contentContainer.appendChild(nameInput);
+                        contentContainer.appendChild(buttonsContainer);
+
+                        item.appendChild(contentContainer);
                         viewshedList.appendChild(item);
+
+                        // Color button click handler
+                        colorButton.addEventListener('click', (e) => {
+                            e.stopPropagation();
+
+                            // Close any other open color pickers
+                            document.querySelectorAll('.color-picker').forEach(picker => {
+                                if (picker !== colorPicker) picker.style.display = 'none';
+                            });
+
+                            // Toggle this picker
+                            const shouldShow = colorPicker.style.display !== 'block';
+                            colorPicker.style.display = shouldShow ? 'block' : 'none';
+
+                            if (shouldShow) {
+                                // Position it based on available space
+                                const buttonRect = colorButton.getBoundingClientRect();
+                                const viewportHeight = window.innerHeight;
+
+                                if (buttonRect.bottom + colorPicker.offsetHeight > viewportHeight) {
+                                    // Not enough space below - show above
+                                    colorPicker.style.top = 'auto';
+                                    colorPicker.style.bottom = '100%';
+                                } else {
+                                    // Enough space - show below
+                                    colorPicker.style.top = '100%';
+                                    colorPicker.style.bottom = 'auto';
+                                }
+                            }
+                        });
+
+                        // Apply color changes
+                        applyColorButton.addEventListener('click', () => {
+                            const hexColor = visibleColorInput.value;
+                            const transparency = transparencyInput.value / 100;
+                            const rgb = hexToRgb(hexColor);
+
+                            viewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
+                            viewshed.obstructedColor = [0, 0, 0, 0];
+
+                            // Force refresh
+                            viewshedLayer.source.viewsheds.remove(viewshed);
+                            viewshedLayer.source.viewsheds.add(viewshed);
+
+                            colorPicker.style.display = 'none';
+                        });
+
+                        // Close picker when clicking elsewhere
+                        document.addEventListener('click', (e) => {
+                            if (!colorControlContainer.contains(e.target)) {
+                                colorPicker.style.display = 'none';
+                            }
+                        }, true);
                     }
                     // Helper functions for color conversion
                     function rgbToHex(rgbArray) {

@@ -394,6 +394,54 @@
                         colorPickerContent.style.display = 'block'; // Always visible when shown
 
                         // ... (keep all your existing color picker content creation code)
+                        // Color control container
+                         const colorControlContainer = document.createElement('div');
+                        colorControlContainer.style.position = 'relative';
+                        colorControlContainer.style.display = 'inline-block';
+                        colorControlContainer.style.marginRight = '10px';
+
+                        // Color button
+                        const colorButton = document.createElement('calcite-button');
+                        colorButton.iconStart = "palette";
+                        colorButton.title = "Change Color";
+                        colorButton.scale = "s";
+
+                        // Color picker
+                        const colorPicker = document.createElement('div');
+                        colorPicker.className = 'color-picker';
+                        colorPicker.style.display = 'none';
+
+                        // Color picker content
+                        const visibleColorLabel = document.createElement('label');
+                        visibleColorLabel.textContent = 'Visible Color:';
+                        const visibleColorInput = document.createElement('input');
+                        visibleColorInput.type = 'color';
+                        visibleColorInput.value = rgbToHex(viewshed.visibleColor);
+                        visibleColorInput.style.marginLeft = '5px';
+
+                        const transparencyLabel = document.createElement('label');
+                        transparencyLabel.textContent = 'Transparency:';
+                        const transparencyInput = document.createElement('input');
+                        transparencyInput.type = 'range';
+                        transparencyInput.min = '0';
+                        transparencyInput.max = '100';
+                        transparencyInput.value = (1 - viewshed.visibleColor[3]) * 100;
+                        transparencyInput.style.width = '100px';
+                        transparencyInput.style.marginLeft = '5px';
+
+                        const applyColorButton = document.createElement('calcite-button');
+                        applyColorButton.textContent = 'Apply';
+                        applyColorButton.scale = 's';
+
+                        colorPicker.appendChild(visibleColorLabel);
+                        colorPicker.appendChild(visibleColorInput);
+                        colorPicker.appendChild(document.createElement('br'));
+                        colorPicker.appendChild(transparencyLabel);
+                        colorPicker.appendChild(transparencyInput);
+                        colorPicker.appendChild(applyColorButton);
+
+
+
 
                         // Color button click handler
                         colorButton.addEventListener('click', (e) => {
@@ -459,51 +507,7 @@
 
 
 
-                        // Color control container
-                        const colorControlContainer = document.createElement('div');
-                        colorControlContainer.style.position = 'relative';
-                        colorControlContainer.style.display = 'inline-block';
-                        colorControlContainer.style.marginRight = '10px';
 
-                        // Color button
-                        const colorButton = document.createElement('calcite-button');
-                        colorButton.iconStart = "palette";
-                        colorButton.title = "Change Color";
-                        colorButton.scale = "s";
-
-                        // Color picker
-                        const colorPicker = document.createElement('div');
-                        colorPicker.className = 'color-picker';
-                        colorPicker.style.display = 'none';
-
-                        // Color picker content
-                        const visibleColorLabel = document.createElement('label');
-                        visibleColorLabel.textContent = 'Visible Color:';
-                        const visibleColorInput = document.createElement('input');
-                        visibleColorInput.type = 'color';
-                        visibleColorInput.value = rgbToHex(viewshed.visibleColor);
-                        visibleColorInput.style.marginLeft = '5px';
-
-                        const transparencyLabel = document.createElement('label');
-                        transparencyLabel.textContent = 'Transparency:';
-                        const transparencyInput = document.createElement('input');
-                        transparencyInput.type = 'range';
-                        transparencyInput.min = '0';
-                        transparencyInput.max = '100';
-                        transparencyInput.value = (1 - viewshed.visibleColor[3]) * 100;
-                        transparencyInput.style.width = '100px';
-                        transparencyInput.style.marginLeft = '5px';
-
-                        const applyColorButton = document.createElement('calcite-button');
-                        applyColorButton.textContent = 'Apply';
-                        applyColorButton.scale = 's';
-
-                        colorPicker.appendChild(visibleColorLabel);
-                        colorPicker.appendChild(visibleColorInput);
-                        colorPicker.appendChild(document.createElement('br'));
-                        colorPicker.appendChild(transparencyLabel);
-                        colorPicker.appendChild(transparencyInput);
-                        colorPicker.appendChild(applyColorButton);
 
                         // Name input
                         const nameInput = document.createElement('calcite-input');

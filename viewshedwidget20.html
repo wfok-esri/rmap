@@ -132,8 +132,10 @@
             "esri/analysis/Viewshed",
             "esri/geometry/SpatialReference",
             "esri/core/promiseUtils",
-            "esri/core/reactiveUtils"
-        ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils) => {
+            "esri/core/reactiveUtils",
+            "esri/Color",
+            "esri/renderers/SimpleRenderer"
+        ], (WebScene, Camera, SceneView, ViewshedLayer, ViewshedLayerView, ViewshedAnalysis, Viewshed, SpatialReference, promiseUtils, reactiveUtils, Color) => {
             const sceneElement = document.getElementById("sceneview");
             sceneElement.addEventListener("arcgisViewReadyChange", () => {
                 const view = sceneElement.view;
@@ -147,6 +149,19 @@
                         })
                     });
 
+                      // Create a simple renderer for the viewshed
+  const renderer = new SimpleRenderer({
+    symbol: {
+      type: "simple-fill",
+      color: "rgba(0, 0, 255, 0.5)", // color for visible areas
+      outline: {
+        color: "blue",
+        width: 1
+      }
+    }
+  });
+    // Apply the renderer to the viewshed layer
+    viewshedLayer.renderer = renderer;
                     // Add the ViewshedLayer to the map
                     view.map.add(viewshedLayer);
                     viewshedLayer.source.visibleColor = [0, 255, 255, 0.5];

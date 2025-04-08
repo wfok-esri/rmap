@@ -378,26 +378,14 @@
                         contentContainer.style.display = 'flex';
                         contentContainer.style.alignItems = 'center';
                         contentContainer.style.width = '100%';
+                        contentContainer.style.gap = '5px';
 
-                        // --- Color Control Section ---
-                        const colorButton = document.createElement('calcite-button');
-                        colorButton.iconStart = "palette";
-                        colorButton.title = "Change Color";
-                        colorButton.scale = "s";
-                        colorButton.style.marginRight = '10px';
-                        colorButton.className = 'color-button'; // For click-away detection
-
-                        // --- Name Input Section ---
+                        // Name Input
                         const nameInput = document.createElement('calcite-input');
                         nameInput.className = 'viewshed-name';
                         nameInput.value = `Viewshed ${viewshedList.children.length + 1}`;
                         nameInput.disabled = true;
                         nameInput.style.flexGrow = '1'; // Takes available space
-
-                        // --- Action Buttons Section ---
-                        const buttonsContainer = document.createElement('div');
-                        buttonsContainer.style.display = 'flex';
-                        buttonsContainer.style.marginLeft = '10px';
 
                         // Rename Button
                         const renameButton = document.createElement('calcite-button');
@@ -408,6 +396,14 @@
                             nameInput.disabled = !nameInput.disabled;
                             if (!nameInput.disabled) nameInput.focus();
                         });
+
+                        // Color Button
+                        const colorButton = document.createElement('calcite-button');
+                        colorButton.iconStart = "palette";
+                        colorButton.title = "Change Color";
+                        colorButton.scale = "s";
+                        colorButton.style.marginRight = '10px';
+                        colorButton.className = 'color-button'; // For click-away detection
 
                         // Visibility Toggle Button
                         const visibilityButton = document.createElement('calcite-button');
@@ -489,6 +485,17 @@
                         colorPickerContent.appendChild(transparencyInput);
                         colorPickerContent.appendChild(applyColorButton);
 
+                        // --- Assemble All Components ---
+                        contentContainer.appendChild(nameInput);
+                        contentContainer.appendChild(renameButton);
+                        contentContainer.appendChild(colorButton);
+                        contentContainer.appendChild(visibilityButton);
+                        contentContainer.appendChild(zoomButton);
+                        contentContainer.appendChild(removeButton);
+
+                        item.appendChild(contentContainer);
+                        viewshedList.appendChild(item);
+
                         // Color Button Click Handler
                         colorButton.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -542,18 +549,6 @@
                             colorPickerContainer.style.display = 'none';
                         });
 
-                        // --- Assemble All Components ---
-                        buttonsContainer.appendChild(renameButton);
-                        buttonsContainer.appendChild(visibilityButton);
-                        buttonsContainer.appendChild(zoomButton);
-                        buttonsContainer.appendChild(removeButton);
-
-                        contentContainer.appendChild(colorButton);
-                        contentContainer.appendChild(nameInput);
-                        contentContainer.appendChild(buttonsContainer);
-
-                        item.appendChild(contentContainer);
-                        viewshedList.appendChild(item);
                     }
 
                     // Helper functions for color conversion

@@ -100,12 +100,12 @@
         .color-picker-container {
             position: fixed;
             z-index: 1000;
-            background: white;
+            background: white !important;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            display: none;
+            /* display: none; */
         }
 
         .color-picker {
@@ -491,6 +491,10 @@
                         colorButton.addEventListener('click', (e) => {
                             e.stopPropagation();
 
+                            // Close any existing picker first
+                            const existingPicker = document.getElementById('colorPickerContainer');
+                            if (existingPicker) existingPicker.style.display = 'none';
+
                             // Get or create global color picker container
                             let colorPickerContainer = document.getElementById('colorPickerContainer');
                             if (!colorPickerContainer) {
@@ -499,6 +503,15 @@
                                 colorPickerContainer.className = 'color-picker-container';
                                 document.body.appendChild(colorPickerContainer);
                             }
+
+                            // Auto-Close Color Picker
+                            document.addEventListener('click', function closeColorPicker(e) {
+                                const colorPickerContainer = document.getElementById('colorPickerContainer');
+                                if (colorPickerContainer && !colorPickerContainer.contains(e.target) &&
+                                    !e.target.classList.contains('color-button')) {
+                                    colorPickerContainer.style.display = 'none';
+                                }
+                            });
 
                             // Update picker with current values
                             visibleColorInput.value = rgbToHex(viewshed.visibleColor);
@@ -535,16 +548,17 @@
                                 const transparency = transparencyInput.value / 100;
                                 const rgb = hexToRgb(hexColor);
 
-                                // Update the existing viewshed's colors directly
+                                // Update the viewshed's color properties
                                 const viewshed = colorPickerContainer.currentViewshed;
                                 viewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
-                                viewshed.obstructedColor = [0, 0, 0, 0]; // Force transparent obstructed areas
+                                viewshed.obstructedColor = [0, 0, 0, 0]; // Fully transparent
 
-                                // Refresh the viewshed by removing and re-adding it
-                                const index = viewshedLayer.source.viewsheds.indexOf(viewshed);
+                                // Force update by removing and re-adding the viewshed
+                                const viewsheds = viewshedLayer.source.viewsheds;
+                                const index = viewsheds.indexOf(viewshed);
                                 if (index !== -1) {
-                                    viewshedLayer.source.viewsheds.removeAt(index);
-                                    viewshedLayer.source.viewsheds.add(viewshed, index);
+                                    viewsheds.removeAt(index);
+                                    viewsheds.add(viewshed, index);
                                 }
 
                                 colorPickerContainer.style.display = 'none';

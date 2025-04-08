@@ -265,6 +265,9 @@
                             viewshedLayer.source.viewsheds.add(manualViewshed);
                             addViewshedToList(manualViewshed);
                         }
+                        console.log('Creating new viewshed with colors:');
+                        console.log('visibleColor:', formatColorForLog(manualViewshed.visibleColor));
+                        console.log('obstructedColor:', formatColorForLog(manualViewshed.obstructedColor));
                     });
                     // Modified the reactiveUtils.when condition to check for manual mode:
                     reactiveUtils.when(
@@ -580,21 +583,49 @@
                         applyColorButton.addEventListener('click', () => {
                             const colorPickerContainer = document.getElementById('colorPickerContainer');
                             if (colorPickerContainer?.currentViewshed) {
+                                const viewshed = colorPickerContainer.currentViewshed;
                                 const hexColor = visibleColorInput.value;
                                 const transparency = transparencyInput.value / 100;
                                 const rgb = hexToRgb(hexColor);
 
-                                // Update the viewshed's color properties
-                                const viewshed = colorPickerContainer.currentViewshed;
-                                viewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
-                                viewshed.obstructedColor = [0, 0, 0, 0]; // Fully transparent
+                                // Log current values before change
+                                console.group('Updating Viewshed Colors');
+                                console.log('Current visibleColor:', formatColorForLog(viewshed.visibleColor));
+                                console.log('Current obstructedColor:', formatColorForLog(viewshed.obstructedColor));
+                                console.log('New color values - Hex:', hexColor, 'RGB:', rgb, 'Transparency:', transparency);
 
-                                // Force update by removing and re-adding the viewshed
+                                // Create new color arrays
+                                const newVisibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
+                                const newObstructedColor = [0, 0, 0, 0];
+
+                                console.log('Setting visibleColor to:', formatColorForLog(newVisibleColor));
+                                console.log('Setting obstructedColor to:', formatColorForLog(newObstructedColor));
+
+                                // Update the viewshed
+                                viewshed.visibleColor = newVisibleColor;
+                                viewshed.obstructedColor = newObstructedColor;
+
+                                // Log immediately after assignment
+                                console.log('After assignment - visibleColor:', formatColorForLog(viewshed.visibleColor));
+                                console.log('After assignment - obstructedColor:', formatColorForLog(viewshed.obstructedColor));
+
+                                // Force update by removing and re-adding
                                 const viewsheds = viewshedLayer.source.viewsheds;
                                 const index = viewsheds.indexOf(viewshed);
                                 if (index !== -1) {
+                                    console.log('Re-adding viewshed to force update...');
                                     viewsheds.removeAt(index);
                                     viewsheds.add(viewshed, index);
+
+                                    // Log after re-adding
+                                    setTimeout(() => {
+                                        console.log('After re-adding - visibleColor:', formatColorForLog(viewshed.visibleColor));
+                                        console.log('After re-adding - obstructedColor:', formatColorForLog(viewshed.obstructedColor));
+                                        console.groupEnd();
+                                    }, 100);
+                                } else {
+                                    console.warn('Viewshed not found in collection');
+                                    console.groupEnd();
                                 }
 
                                 colorPickerContainer.style.display = 'none';
@@ -630,11 +661,15 @@
                             b: parseInt(result[3], 16)
                         } : { r: 0, g: 255, b: 0 }; // Default to green if invalid
                     }
+                    function formatColorForLog(colorArray) {
+                        if (!colorArray) return "null";
+                        return `[${colorArray.join(', ')}] (R:${colorArray[0]}, G:${colorArray[1]}, B:${colorArray[2]}, A:${colorArray[3]})`;
+                    }
                 });
             });
         });
     </script>
-    <div id="colorPickerContainer" style="position: absolute; display: none; z-index: 1000;"></div>
+    <div id="colorPickerContainer" style="position: absolute; z-index: 1000;"></div>
 </body>
 
 </html>

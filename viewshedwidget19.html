@@ -1,4 +1,4 @@
-//Use This One; No Anaylsis Mode included; Customize viewshed color ver2
+//Use This One; No Anaylsis Mode included; Customize viewshed color
 <!doctype html>
 <html lang="en">
 
@@ -255,9 +255,11 @@
                                 heading: 0,
                                 horizontalFieldOfView: 85,
                                 verticalFieldOfView: 60,
-                                visibleColor: [0, 255, 0, 0.5],  // RGBA for visible areas (green)
-                                obstructedColor: [0, 0, 0, 0] // RGBA for obstructed areas (transparent)
                             });
+                            // Set colors explicitly after creation
+                            manualViewshed.visibleColor = [0, 255, 0, 0.5];  // RGBA for visible areas (green)
+                            manualViewshed.obstructedColor = [0, 0, 0, 0];   // RGBA for obstructed areas (transparent)
+
                             // Temporarily increment the counter to prevent the reactive listener from firing
                             viewshedCounter++;
                             viewshedLayer.source.viewsheds.add(manualViewshed);
@@ -533,23 +535,16 @@
                                 const transparency = transparencyInput.value / 100;
                                 const rgb = hexToRgb(hexColor);
 
-                                // Create a NEW viewshed with updated colors
-                                const updatedViewshed = new Viewshed({
-                                    observer: viewshed.observer,
-                                    farDistance: viewshed.farDistance,
-                                    tilt: viewshed.tilt,
-                                    heading: viewshed.heading,
-                                    horizontalFieldOfView: viewshed.horizontalFieldOfView,
-                                    verticalFieldOfView: viewshed.verticalFieldOfView,
-                                    visibleColor: [rgb.r, rgb.g, rgb.b, 1 - transparency],
-                                    obstructedColor: [0, 0, 0, 0] // Force transparent obstructed areas
-                                });
+                                // Update the existing viewshed's colors directly
+                                const viewshed = colorPickerContainer.currentViewshed;
+                                viewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
+                                viewshed.obstructedColor = [0, 0, 0, 0]; // Force transparent obstructed areas
 
-                                // Replace the old viewshed with the updated one
-                                const index = viewshedLayer.source.viewsheds.indexOf(colorPickerContainer.currentViewshed);
+                                // Refresh the viewshed by removing and re-adding it
+                                const index = viewshedLayer.source.viewsheds.indexOf(viewshed);
                                 if (index !== -1) {
                                     viewshedLayer.source.viewsheds.removeAt(index);
-                                    viewshedLayer.source.viewsheds.add(updatedViewshed, index);
+                                    viewshedLayer.source.viewsheds.add(viewshed, index);
                                 }
 
                                 colorPickerContainer.style.display = 'none';

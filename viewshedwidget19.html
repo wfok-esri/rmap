@@ -488,6 +488,7 @@
                         colorPickerContent.appendChild(applyColorButton);
 
                         // Color Button Click Handler
+                        // Color Button Click Handler
                         colorButton.addEventListener('click', (e) => {
                             e.stopPropagation();
 
@@ -495,51 +496,86 @@
                             const existingPicker = document.getElementById('colorPickerContainer');
                             if (existingPicker) existingPicker.style.display = 'none';
 
-                            // Get or create global color picker container
-                            let colorPickerContainer = document.getElementById('colorPickerContainer');
-                            if (!colorPickerContainer) {
-                                colorPickerContainer = document.createElement('div');
-                                colorPickerContainer.id = 'colorPickerContainer';
-                                colorPickerContainer.className = 'color-picker-container';
-                                document.body.appendChild(colorPickerContainer);
-                            }
+                            // Create new picker container
+                            const colorPickerContainer = document.createElement('div');
+                            colorPickerContainer.id = 'colorPickerContainer';
+                            colorPickerContainer.className = 'color-picker-container';
+                            document.body.appendChild(colorPickerContainer);
 
-                            // Auto-Close Color Picker
-                            document.addEventListener('click', function closeColorPicker(e) {
-                                const colorPickerContainer = document.getElementById('colorPickerContainer');
-                                if (colorPickerContainer && !colorPickerContainer.contains(e.target) &&
-                                    !e.target.classList.contains('color-button')) {
-                                    colorPickerContainer.style.display = 'none';
-                                }
-                            });
+                            // Create picker content
+                            const colorPickerContent = document.createElement('div');
+                            colorPickerContent.className = 'color-picker';
 
-                            // Update picker with current values
+                            // Color Input
+                            const visibleColorLabel = document.createElement('label');
+                            visibleColorLabel.textContent = 'Visible Color:';
+                            const visibleColorInput = document.createElement('input');
+                            visibleColorInput.type = 'color';
                             visibleColorInput.value = rgbToHex(viewshed.visibleColor);
-                            transparencyInput.value = (1 - viewshed.visibleColor[3]) * 100;
+                            visibleColorInput.style.marginLeft = '5px';
 
-                            // Update picker content and position
-                            colorPickerContainer.innerHTML = '';
+                            // Transparency Slider
+                            const transparencyLabel = document.createElement('label');
+                            transparencyLabel.textContent = 'Transparency:';
+                            const transparencyInput = document.createElement('input');
+                            transparencyInput.type = 'range';
+                            transparencyInput.min = '0';
+                            transparencyInput.max = '100';
+                            transparencyInput.value = (1 - viewshed.visibleColor[3]) * 100;
+                            transparencyInput.style.width = '100px';
+                            transparencyInput.style.marginLeft = '5px';
+
+                            // Apply Button
+                            const applyColorButton = document.createElement('calcite-button');
+                            applyColorButton.textContent = 'Apply';
+                            applyColorButton.scale = 's';
+
+                            // Assemble picker
+                            colorPickerContent.appendChild(visibleColorLabel);
+                            colorPickerContent.appendChild(visibleColorInput);
+                            colorPickerContent.appendChild(document.createElement('br'));
+                            colorPickerContent.appendChild(transparencyLabel);
+                            colorPickerContent.appendChild(transparencyInput);
+                            colorPickerContent.appendChild(applyColorButton);
                             colorPickerContainer.appendChild(colorPickerContent);
 
-                            // Position the picker
+                            // Position picker
                             const buttonRect = colorButton.getBoundingClientRect();
-                            const viewportHeight = window.innerHeight;
-
-                            // Position based on available space
-                            if (buttonRect.bottom + colorPickerContent.offsetHeight > viewportHeight) {
-                                // Show above if not enough space below
-                                colorPickerContainer.style.top = (buttonRect.top - colorPickerContent.offsetHeight - 5) + 'px';
-                            } else {
-                                // Show below by default
-                                colorPickerContainer.style.top = (buttonRect.bottom + 5) + 'px';
-                            }
-                            colorPickerContainer.style.left = buttonRect.left + 'px';
+                            colorPickerContainer.style.top = `${buttonRect.bottom + 5}px`;
+                            colorPickerContainer.style.left = `${buttonRect.left}px`;
                             colorPickerContainer.style.display = 'block';
-
-                            // Store reference to current viewshed
                             colorPickerContainer.currentViewshed = viewshed;
+
+                            // Apply handler
+                            applyColorButton.addEventListener('click', () => {
+                                const hexColor = visibleColorInput.value;
+                                const transparency = transparencyInput.value / 100;
+                                const rgb = hexToRgb(hexColor);
+
+                                // Update viewshed colors
+                                viewshed.visibleColor = [rgb.r, rgb.g, rgb.b, 1 - transparency];
+                                viewshed.obstructedColor = [0, 0, 0, 0]; // Transparent
+
+                                // Force refresh by re-adding
+                                const viewsheds = viewshedLayer.source.viewsheds;
+                                const index = viewsheds.indexOf(viewshed);
+                                if (index !== -1) {
+                                    viewsheds.removeAt(index);
+                                    viewsheds.add(viewshed, index);
+                                }
+
+                                colorPickerContainer.style.display = 'none';
+                            });
                         });
 
+                        // Click-away handler
+                        document.addEventListener('click', function closeColorPicker(e) {
+                            const colorPickerContainer = document.getElementById('colorPickerContainer');
+                            if (colorPickerContainer && !colorPickerContainer.contains(e.target) &&
+                                !e.target.classList.contains('color-button')) {
+                                colorPickerContainer.style.display = 'none';
+                            }
+                        });
                         // Apply Color Changes
                         applyColorButton.addEventListener('click', () => {
                             const colorPickerContainer = document.getElementById('colorPickerContainer');

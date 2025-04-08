@@ -142,16 +142,19 @@
                     const viewshedLayer = new ViewshedLayer({
                         title: "Viewsheds",
                         source: new ViewshedAnalysis({
-                        visibleColor: [0, 255, 255, 0.5],  
-                        obstructedColor: [0, 0, 0, 0]
-                        }),
-                        visibleColor: [0, 255, 255, 0.5],  
-                        obstructedColor: [0, 0, 0, 0]
+                            visibleColor: [0, 255, 255, 0.5],
+                            obstructedColor: [0, 0, 0, 0]
+                        })
                     });
 
                     // Add the ViewshedLayer to the map
                     view.map.add(viewshedLayer);
-
+                    console.log("ViewshedLayer source:", viewshedLayer.source);
+                    console.log("All viewsheds:", viewshedLayer.source.viewsheds.toArray());
+                    console.log("Using ArcGIS JS API version:", require.esriVersion);
+                    view.whenLayerView(viewshedLayer).then(layerView => {
+                        layerView.refresh();
+                    });
                     let creatingStarted = false;
                     let viewshedCounter = viewshedLayer.source.viewsheds.length;
                     const analysisView = await view.whenAnalysisView(viewshedLayer.source);
@@ -217,6 +220,9 @@
                                 visibleColor: [0, 255, 255, 0.5],
                                 obstructedColor: [0, 0, 0, 0]
                             });
+                            console.log("Manual viewshed created:", manualViewshed);
+                            console.log("visibleColor:", manualViewshed.visibleColor);
+                            console.log("obstructedColor:", manualViewshed.obstructedColor);
                             // Temporarily increment the counter to prevent the reactive listener from firing
                             viewshedCounter++;
                             viewshedLayer.source.viewsheds.add(manualViewshed);
@@ -227,6 +233,10 @@
                     reactiveUtils.when(
                         () => !isManualMode && viewshedLayer.source.viewsheds.length > viewshedCounter && analysisView.selectedViewshed,
                         () => {
+                            const newViewshed = analysisView.selectedViewshed;
+                            console.log("New viewshed created (click-and-drag):", newViewshed);
+                            console.log("Current visibleColor:", newViewshed.visibleColor);
+                            console.log("Current obstructedColor:", newViewshed.obstructedColor);
                             stopCreating();
                             addViewshedToList(analysisView.selectedViewshed);
                             viewshedCounter = viewshedLayer.source.viewsheds.length;

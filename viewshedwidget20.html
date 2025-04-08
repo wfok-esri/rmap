@@ -149,9 +149,13 @@
 
                     // Add the ViewshedLayer to the map
                     view.map.add(viewshedLayer);
+                    viewshedLayer.source.visibleColor = [0, 255, 255, 0.5];
+                    viewshedLayer.source.obstructedColor = [0, 0, 0, 0];
                     console.log("ViewshedLayer source:", viewshedLayer.source);
                     console.log("All viewsheds:", viewshedLayer.source.viewsheds.toArray());
                     console.log("Using ArcGIS JS API version:", require.esriVersion);
+                    console.log("ViewshedLayer prototype:", Object.getOwnPropertyNames(ViewshedLayer.prototype));
+                    console.log("ViewshedAnalysis prototype:", Object.getOwnPropertyNames(ViewshedAnalysis.prototype));
                     view.whenLayerView(viewshedLayer).then(layerView => {
                         layerView.refresh();
                     });

@@ -35,22 +35,19 @@
 
   <script>
     require([
-        "esri/WebMap",
-        "esri/views/MapView",
+        "esri/WebScene",
+        "esri/views/SceneView",
         "esri/widgets/Editor",
         "esri/layers/FeatureLayer",
         "esri/core/reactiveUtils"
       ], (
-        WebMap, MapView,
+        WebScene, SceneView,
         Editor, FeatureLayer,
         reactiveUtils
       ) => {
 
-        // Create a map from the referenced webmap item id
-        const webmap = new WebMap({
-          // portalItem: {
-          //   id: "4793230052ed498ebf1c7bed9966bd35"
-          // }
+        // Create a scene from the referenced webscene item id
+        const webscene = new WebScene({
           portalItem: {
             id: "c9762a2985104d74a12550a72a9858bf",
             portal: {
@@ -60,9 +57,9 @@
           }          
         });
 
-        const view = new MapView({
+        const view = new SceneView({
           container: "viewDiv",
-          map: webmap
+          map: webscene
         });
 
         view.when(() => {
@@ -72,8 +69,8 @@
 
           // Listen for when the editor is ready
           editor.on("view-model-ready", () => {
-            // Get all editable layers from the webmap
-            webmap.allLayers.forEach(layer => {
+            // Get all editable layers from the webscene
+            webscene.allLayers.forEach(layer => {
               if (layer.type === "feature" && layer.capabilities.editing.supportsUpdate) {
                 customizeLayerEditor(layer);
               }

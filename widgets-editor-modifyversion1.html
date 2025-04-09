@@ -38,21 +38,12 @@
         "esri/WebMap",
         "esri/views/MapView",
         "esri/widgets/Editor",
-        "esri/widgets/FeatureForm",
-        "esri/form/FieldElement",
-        "esri/form/FormTemplate",
         "esri/layers/FeatureLayer",
-        "esri/symbols/SimpleMarkerSymbol",
-        "esri/symbols/SimpleLineSymbol",
-        "esri/symbols/SimpleFillSymbol",
-        "dojo/dom-construct"
+        "esri/core/watchUtils"
       ], (
         WebMap, MapView,
-        Editor, FeatureForm,
-        FieldElement, FormTemplate,
-        FeatureLayer, SimpleMarkerSymbol,
-        SimpleLineSymbol, SimpleFillSymbol,
-        domConstruct
+        Editor, FeatureLayer,
+        watchUtils
       ) => {
 
         // Create a map from the referenced webmap item id
@@ -87,33 +78,34 @@
         });
 
         function customizeLayerEditor(layer) {
-          // Listen for when the feature form is created
-          layer.on("feature-form-create", (event) => {
-            const featureForm = event.featureForm;
-            const feature = event.feature;
-            
-            // Get the layer's renderer
-            const renderer = layer.renderer;
-            
-            // Only proceed if we have a renderer and feature
-            if (renderer && feature) {
-              // Get the symbol for this feature
-              let symbol = renderer.getSymbol(feature);
-              
-              // If no symbol from renderer, use default layer symbol
-              if (!symbol) {
-                symbol = renderer.defaultSymbol;
-              }
-              
-              // If we have a symbol, add it to the form title
-              if (symbol) {
-                const formTitle = featureForm.container.querySelector(".feature-form__form-title");
-                if (formTitle) {
-                  // Create a preview of the symbol
-                  const symbolPreview = createSymbolPreview(symbol);
-                  domConstruct.place(symbolPreview, formTitle, "first");
+          // Watch for feature form creation
+          layer.watch("featureForm", (featureForm) => {
+            if (featureForm) {
+              // Watch for when the form is ready
+              watchUtils.whenTrue(featureForm, "ready", () => {
+                const feature = featureForm.feature;
+                const renderer = layer.renderer;
+                
+                if (renderer && feature) {
+                  // Get the symbol for this feature
+                  let symbol = renderer.getSymbol(feature);
+                  
+                  // If no symbol from renderer, use default layer symbol
+                  if (!symbol) {
+                    symbol = renderer.defaultSymbol;
+                  }
+                  
+                  // If we have a symbol, add it to the form title
+                  if (symbol) {
+                    const formTitle = featureForm.container.querySelector(".feature-form__form-title");
+                    if (formTitle) {
+                      // Create a preview of the symbol
+                      const symbolPreview = createSymbolPreview(symbol);
+                      formTitle.insertBefore(symbolPreview, formTitle.firstChild);
+                    }
+                  }
                 }
-              }
+              });
             }
           });
         }

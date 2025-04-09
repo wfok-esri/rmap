@@ -39,11 +39,11 @@
         "esri/views/MapView",
         "esri/widgets/Editor",
         "esri/layers/FeatureLayer",
-        "esri/core/watchUtils"
+        "esri/core/reactiveUtils"
       ], (
         WebMap, MapView,
         Editor, FeatureLayer,
-        watchUtils
+        reactiveUtils
       ) => {
 
         // Create a map from the referenced webmap item id
@@ -82,7 +82,7 @@
           layer.watch("featureForm", (featureForm) => {
             if (featureForm) {
               // Watch for when the form is ready
-              watchUtils.whenTrue(featureForm, "ready", () => {
+              reactiveUtils.whenTrue(featureForm, "ready", () => {
                 const feature = featureForm.feature;
                 const renderer = layer.renderer;
                 

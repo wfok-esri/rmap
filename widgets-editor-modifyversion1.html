@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Edit features with the Editor widget | Sample | ArcGIS Maps SDK for JavaScript 4.32</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    
+    /* Custom CSS for symbology in editor */
+    .symbol-preview {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .symbol-preview-line {
+      height: 3px;
+      margin-top: 8px;
+    }
+  </style>
+
+  <script>
+    require([
+        "esri/WebMap",
+        "esri/views/MapView",
+        "esri/widgets/Editor",
+        "esri/widgets/FeatureForm",
+        "esri/form/FieldElement",
+        "esri/form/FormTemplate",
+        "esri/layers/FeatureLayer",
+        "esri/symbols/SimpleMarkerSymbol",
+        "esri/symbols/SimpleLineSymbol",
+        "esri/symbols/SimpleFillSymbol",
+        "dojo/dom-construct"
+      ], (
+        WebMap, MapView,
+        Editor, FeatureForm,
+        FieldElement, FormTemplate,
+        FeatureLayer, SimpleMarkerSymbol,
+        SimpleLineSymbol, SimpleFillSymbol,
+        domConstruct
+      ) => {
+
+        // Create a map from the referenced webmap item id
+        const webmap = new WebMap({
+          portalItem: {
+            id: "4793230052ed498ebf1c7bed9966bd35"
+          }
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: webmap
+        });
+
+        view.when(() => {
+          const editor = new Editor({
+            view: view
+          });
+
+          // Listen for when the editor is ready
+          editor.on("view-model-ready", () => {
+            // Get all editable layers from the webmap
+            webmap.allLayers.forEach(layer => {
+              if (layer.type === "feature" && layer.capabilities.editing.supportsUpdate) {
+                customizeLayerEditor(layer);
+              }
+            });
+          });
+
+          // Add the widget to the view
+          view.ui.add(editor, "top-right");
+        });
+
+        function customizeLayerEditor(layer) {
+          // Listen for when the feature form is created
+          layer.on("feature-form-create", (event) => {
+            const featureForm = event.featureForm;
+            const feature = event.feature;
+            
+            // Get the layer's renderer
+            const renderer = layer.renderer;
+            
+            // Only proceed if we have a renderer and feature
+            if (renderer && feature) {
+              // Get the symbol for this feature
+              let symbol = renderer.getSymbol(feature);
+              
+              // If no symbol from renderer, use default layer symbol
+              if (!symbol) {
+                symbol = renderer.defaultSymbol;
+              }
+              
+              // If we have a symbol, add it to the form title
+              if (symbol) {
+                const formTitle = featureForm.container.querySelector(".feature-form__form-title");
+                if (formTitle) {
+                  // Create a preview of the symbol
+                  const symbolPreview = createSymbolPreview(symbol);
+                  domConstruct.place(symbolPreview, formTitle, "first");
+                }
+              }
+            }
+          });
+        }
+
+        function createSymbolPreview(symbol) {
+          const previewDiv = document.createElement("div");
+          previewDiv.className = "symbol-preview";
+          
+          if (symbol.type === "simple-marker") {
+            previewDiv.style.backgroundColor = symbol.color.toCss();
+            previewDiv.style.borderRadius = "50%";
+            previewDiv.style.border = "1px solid #666";
+          } 
+          else if (symbol.type === "simple-line") {
+            previewDiv.className += " symbol-preview-line";
+            previewDiv.style.backgroundColor = symbol.color.toCss();
+            previewDiv.style.width = "30px";
+          } 
+          else if (symbol.type === "simple-fill") {
+            previewDiv.style.backgroundColor = symbol.color.toCss();
+            previewDiv.style.border = "1px solid #666";
+          }
+          
+          return previewDiv;
+        }
+      });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

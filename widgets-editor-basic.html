@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <!doctype html>
 <html lang="en">
 
@@ -19,29 +18,44 @@
       height: 100%;
       width: 100%;
     }
-
   </style>
 
   <script>
     require([
         "esri/WebMap",
         "esri/views/MapView",
-        "esri/widgets/Editor"
+        "esri/widgets/Editor",
+        "esri/WebScene",
+        "esri/views/SceneView",
+        "esri/identity/IdentityManager"
       ], (
         WebMap, MapView,
-        Editor
+        Editor,
+        WebScene, SceneView,
+        IdentityManager
       ) => {
 
-        // Create a map from the referenced webmap item id
-        const webmap = new WebMap({
-          portalItem: {
-            id: "4793230052ed498ebf1c7bed9966bd35"
-          }
+        // Register the credentials before loading the web scene
+        IdentityManager.registerToken({
+          server: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
+          userId: "portaladmin",
+          password: "gis12345",
+          ssl: true
         });
 
-        const view = new MapView({
+        const webscene = new WebScene({
+          portalItem: {
+            id: "c9762a2985104d74a12550a72a9858bf",
+            portal: {
+              url: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
+              authMode: "auto"
+            }
+          }          
+        });
+
+        const view = new SceneView({
           container: "viewDiv",
-          map: webmap
+          map: webscene
         });
 
         view.when(() => {

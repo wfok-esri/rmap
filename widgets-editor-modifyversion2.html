@@ -18,7 +18,7 @@
       height: 100%;
       width: 100%;
     }
-    
+
     /* Custom CSS for symbology in editor */
     .symbol-preview {
       display: inline-block;
@@ -27,6 +27,7 @@
       margin-right: 8px;
       vertical-align: middle;
     }
+
     .symbol-preview-line {
       height: 3px;
       margin-top: 8px;
@@ -34,60 +35,50 @@
   </style>
 
   <script>
-require([
-    "esri/WebMap",
-    "esri/views/MapView",
-    "esri/widgets/Editor",
-    "esri/Graphic"
-  ], (
-    WebMap, MapView, Editor, Graphic
-  ) => {
-    const webmap = new WebMap({
-      // portalItem: {
-      //   id: "4793230052ed498ebf1c7bed9966bd35"
-      // }
-      portalItem: {
-        id: "c9762a2985104d74a12550a72a9858bf",
-        portal: {
-          url: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
-          authMode: "auto"
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Editor",
+      "esri/Graphic"
+    ], (
+      WebScene, SceneView, Editor, Graphic
+    ) => {
+      const webscene = new WebScene({
+        portalItem: {
+          id: "YOUR_WEB_SCENE_ID" // Replace with your web scene ID
         }
-      }
-    });
-
-    const view = new MapView({
-      container: "viewDiv",
-      map: webmap
-    });
-
-    view.when(() => {
-      const editor = new Editor({
-        view: view
       });
 
-      view.ui.add(editor, "top-right");
+      const view = new SceneView({
+        container: "viewDiv",
+        map: webscene
+      });
 
-      // Listen for create event
-      editor.on("create", (event) => {
-        // Access the geometry and symbology
-        const geometry = event.graphic.geometry;
-        const symbology = event.graphic.symbol;
-
-        // Create a graphic to render the symbology
-        const sketchGraphic = new Graphic({
-          geometry: geometry,
-          symbol: symbology // This should reflect the layer's symbology
+      view.when(() => {
+        const editor = new Editor({
+          view: view
         });
 
-        view.graphics.add(sketchGraphic);
-      });
+        view.ui.add(editor, "top-right");
 
-      // Optional: Clear the sketch graphic when done
-      editor.on("complete", () => {
-        view.graphics.removeAll(); // Clean up after creation
+        // Listen for create event
+        editor.on("create", (event) => {
+          const geometry = event.graphic.geometry;
+          const symbology = event.graphic.symbol;
+
+          const sketchGraphic = new Graphic({
+            geometry: geometry,
+            symbol: symbology
+          });
+
+          view.graphics.add(sketchGraphic);
+        });
+
+        editor.on("complete", () => {
+          view.graphics.removeAll();
+        });
       });
     });
-  });
   </script>
 </head>
 

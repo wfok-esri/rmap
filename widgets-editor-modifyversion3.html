@@ -71,6 +71,7 @@
           layer.featureTemplates.forEach(template => {
             // Get the symbol color from the template
             const symbol = template.prototype.symbol;
+            console.log("symbol", symbol);
             let color;
             
             if (symbol.type === "simple-line") {

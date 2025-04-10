@@ -64,7 +64,7 @@
     editor.when(() => {
       // Get all editable layers
       const layers = editor.viewModel.editableLayers;
-      
+      console.log("layers", layers);
       layers.forEach(layer => {
         if (layer.type === "feature") {
           // Get the feature templates

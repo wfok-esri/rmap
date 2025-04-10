@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Edit features with the Editor widget | Sample | ArcGIS Maps SDK for JavaScript 4.32</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <script>
+    require([
+  "esri/WebMap",
+  "esri/views/MapView",
+  "esri/widgets/Editor",
+  "esri/WebScene",
+  "esri/views/SceneView",
+  "esri/identity/IdentityManager",
+  "esri/layers/FeatureLayer"
+], (
+  WebMap, MapView,
+  Editor,
+  WebScene, SceneView,
+  IdentityManager,
+  FeatureLayer
+) => {
+
+  const webscene = new WebScene({
+    portalItem: {
+      id: "c9762a2985104d74a12550a72a9858bf",
+      portal: {
+        url: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
+        authMode: "auto"
+      }
+    }          
+  });
+
+  const view = new SceneView({
+    container: "viewDiv",
+    map: webscene
+  });
+
+  view.when(() => {
+    const editor = new Editor({
+      view: view
+    });
+
+    // Add the widget to the view
+    view.ui.add(editor, "top-right");
+
+    // Wait for editor to load
+    editor.when(() => {
+      // Get all editable layers
+      const layers = editor.viewModel.editableLayers;
+      
+      layers.forEach(layer => {
+        if (layer.type === "feature") {
+          // Get the feature templates
+          layer.featureTemplates.forEach(template => {
+            // Get the symbol color from the template
+            const symbol = template.prototype.symbol;
+            let color;
+            
+            if (symbol.type === "simple-line") {
+              color = symbol.color.toCss();
+            } else if (symbol.type === "simple-fill") {
+              color = symbol.outline.color.toCss();
+            }
+            
+            // Map the template name to its color
+            if (color && template.name) {
+              // Add CSS dynamically for each template
+              const style = document.createElement('style');
+              style.textContent = `
+                calcite-combobox-item[text-label="${template.name}"] {
+                  background-color: ${color} !important;
+                }
+              `;
+              document.head.appendChild(style);
+            }
+          });
+        }
+      });
+    });
+  });
+});
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

@@ -63,6 +63,9 @@
     // Wait for editor to load
     editor.when(() => {
       // Get all editable layers
+      console.log("editor", editor);
+      console.log("editor.viewModel", editor.viewModel);
+      console.log("editor.viewModel.editableLayers", editor.viewModel.editableLayers);
       const layers = editor.viewModel.editableLayers;
       console.log("layers", layers);
       layers.forEach(layer => {

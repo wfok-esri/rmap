@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Edit features with colored type options</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    
+    .color-preview {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #ccc;
+      margin-right: 8px;
+      vertical-align: middle;
+      border-radius: 3px;
+    }
+    
+    calcite-combobox-item .title {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+
+  <script>
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Editor",
+      "esri/core/reactiveUtils",
+      "esri/widgets/FeatureForm"
+    ], function(
+      WebScene,
+      SceneView,
+      Editor,
+      reactiveUtils,
+      FeatureForm
+    ) {
+      const webscene = new WebScene({
+        portalItem: {
+          id: "c9762a2985104d74a12550a72a9858bf",
+          portal: {
+            url: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
+            authMode: "auto"
+          }
+        }          
+      });
+
+      const view = new SceneView({
+        container: "viewDiv",
+        map: webscene
+      });
+
+      // Store color information for each layer type
+      const layerColors = {
+        "Polygon": {},
+        "Line": {},
+        "Dotted_Line": {},
+        "Point": {}
+      };
+
+      view.when(() => {
+        const editor = new Editor({
+          view: view
+        });
+
+        view.ui.add(editor, "top-right");
+        
+        // Extract color information from layers
+        webscene.allLayers.forEach(layer => {
+          if (layer.type === "feature" && layerColors.hasOwnProperty(layer.title)) {
+            const renderer = layer.renderer;
+            if (renderer?.type === "unique-value") {
+              renderer.uniqueValueInfos?.forEach(info => {
+                const color = extractColorFromSymbol(info.symbol);
+                if (color) {
+                  layerColors[layer.title][info.value] = color;
+                }
+              });
+            }
+          }
+        });
+        
+        // Watch for feature form creation using reactiveUtils
+        reactiveUtils.watch(
+          () => editor.viewModel.activeWorkflow,
+          (workflow) => {
+            if (workflow?.featureForm) {
+              setupFormCustomization(workflow.featureForm);
+            }
+          }
+        );
+      });
+      
+      function extractColorFromSymbol(symbol) {
+        if (!symbol) return null;
+        
+        const symbolType = symbol.type.toLowerCase();
+        const layerTypes = {
+          'polygonsymbol3d': () => symbol.symbolLayers?.find(l => l.type === "fill")?.material?.color,
+          'linesymbol3d': () => symbol.symbolLayers?.find(l => l.type === "line")?.material?.color,
+          'pointsymbol3d': () => symbol.symbolLayers?.find(l => l.type === "icon")?.material?.color
+        };
+        
+        return layerTypes[symbolType]?.() || null;
+      }
+      
+      function setupFormCustomization(featureForm) {
+        // Watch for form readiness
+        reactiveUtils.whenOnce(
+          () => featureForm.ready,
+          () => {
+            const typeField = featureForm.fields.find(f => f.name === "type");
+            if (!typeField) return;
+            
+            const layerTitle = featureForm.feature?.layer?.title;
+            if (!layerTitle || !layerColors[layerTitle]) return;
+            
+            const combobox = featureForm.container.querySelector(
+              `[data-field="${typeField.name}"] calcite-combobox`
+            );
+            if (!combobox) return;
+            
+            // Use MutationObserver to handle dynamic items
+            const observer = new MutationObserver((mutations) => {
+              const items = combobox.querySelectorAll("calcite-combobox-item:not(.has-color-preview)");
+              
+              items.forEach(item => {
+                const value = item.getAttribute("text-label");
+                const color = layerColors[layerTitle][value];
+                
+                if (color) {
+                  const preview = document.createElement("span");
+                  preview.className = "color-preview";
+                  preview.style.backgroundColor = `rgba(${color.join(",")})`;
+                  
+                  const title = item.querySelector(".title");
+                  if (title) {
+                    title.insertBefore(preview, title.firstChild);
+                    item.classList.add("has-color-preview");
+                  }
+                }
+              });
+            });
+            
+            observer.observe(combobox, {
+              childList: true,
+              subtree: true
+            });
+            
+            // Process existing items immediately
+            observer.takeRecords();
+          }
+        );
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

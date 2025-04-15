@@ -72,7 +72,7 @@
           
           // Safe color extraction from symbol
           function getColorFromSymbol(symbol) {
-            //console.log("symbol", symbol);
+            console.log("symbol", symbol);
             try {
               // Handle 3D symbols with symbolLayers
               if (symbol.symbolLayers && symbol.symbolLayers.length > 0) {
@@ -84,17 +84,42 @@
                   return symbolLayer.items[0].material.color;
                 }
                 // Fallback for line symbols
-                if (symbolLayer.items[0].material.color) {
-                  return symbolLayer.items[0].material.color;
+                if (symbolLayer.color) {
+                  return symbolLayer.color;
                 }
               }
               // Handle 2D symbols
-              if (symbolLayer.items[0].material.color) {
-                return symbolLayer.items[0].material.color;
+              if (symbol.color) {
+                return symbol.color;
               }
             } catch (e) {
               console.warn("Could not extract color from symbol:", e);
             }
+            return null;
+          }
+          
+          // Convert color object to rgba string
+          function colorToRgba(color) {
+            if (!color) return null;
+            
+            // If color is already a string (like "rgba(255,0,0,1)")
+            if (typeof color === 'string') return color;
+            
+            // If color is an object with r,g,b,a properties (ESRI Color object)
+            if (color.r !== undefined && color.g !== undefined && color.b !== undefined) {
+              const a = color.a !== undefined ? color.a : 1;
+              return `rgba(${Math.round(color.r)},${Math.round(color.g)},${Math.round(color.b)},${a})`;
+            }
+            
+            // If color is an array [r,g,b] or [r,g,b,a]
+            if (Array.isArray(color)) {
+              const r = color[0] || 0;
+              const g = color[1] || 0;
+              const b = color[2] || 0;
+              const a = color[3] !== undefined ? color[3] : 1;
+              return `rgba(${r},${g},${b},${a})`;
+            }
+            
             return null;
           }
           
@@ -107,8 +132,12 @@
                   
                   layer.renderer.uniqueValueInfos.forEach(info => {
                     const color = getColorFromSymbol(info.symbol);
-                    if (color) {
-                      colorMap.set(info.value, `rgba(${color.slice(0, 3).join(',')},1)`);
+                    console.log("color", color);
+                    const rgbaColor = colorToRgba(color);
+                    console.log("rgbaColor", rgbaColor);
+                    if (rgbaColor) {
+                      colorMap.set(info.value, rgbaColor);
+                      console.log(`Cached color for layer ${layer.id}, value ${info.value}:`, rgbaColor);
                     }
                   });
                   
@@ -150,7 +179,10 @@
                   if (labelElement) {
                     labelElement.prepend(colorIndicator);
                     item.dataset.colorEnhanced = 'true';
+                    console.log('Added color indicator for value:', value, 'with color:', color);
                   }
+                } else {
+                  console.log('No color found for value:', value, 'in layer:', activeLayer.id);
                 }
               });
             } catch (e) {
@@ -165,8 +197,8 @@
               if (state === "ready") {
                 const editorContainer = document.querySelector('.esri-editor');
                 if (editorContainer) {
-                  const observer = new MutationObserver(() => {
-                    enhanceComboboxItems();
+                  const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(() => enhanceComboboxItems());
                   });
                   
                   observer.observe(editorContainer, {
@@ -194,7 +226,10 @@
             () => editor.viewModel.activeWorkflow,
             (workflow) => {
               if (workflow && (workflow.type === "update" || workflow.type === "create")) {
-                promiseUtils.debounce(enhanceComboboxItems, 100)();
+                promiseUtils.debounce(() => {
+                  console.log('Workflow changed, enhancing combobox items');
+                  enhanceComboboxItems();
+                }, 100)();
               }
             }
           );

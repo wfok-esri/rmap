@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Edit features with the Editor widget | Sample | ArcGIS Maps SDK for JavaScript 4.32</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    
+    /* Enhanced style for color indicators */
+    .esri-editor .calcite-combobox-item .color-indicator {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+  </style>
+
+  <script>
+    require([
+        "esri/WebScene",
+        "esri/views/SceneView",
+        "esri/widgets/Editor",
+        "esri/core/reactiveUtils",
+        "esri/core/promiseUtils"
+      ], (
+        WebScene, SceneView,
+        Editor,
+        reactiveUtils,
+        promiseUtils
+      ) => {
+
+        const webscene = new WebScene({
+          portalItem: {
+            id: "c9762a2985104d74a12550a72a9858bf",
+            portal: {
+              url: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
+              authMode: "auto"
+            }
+          }          
+        });
+
+        const view = new SceneView({
+          container: "viewDiv",
+          map: webscene
+        });
+
+        view.when(() => {
+          const editor = new Editor({
+            view: view
+          });
+
+          view.ui.add(editor, "top-right");
+          
+          // Store color information by layer and type
+          const layerColors = new Map();
+          
+          // Safe color extraction from symbol
+          function getColorFromSymbol(symbol) {
+            //console.log("symbol", symbol);
+            try {
+              // Handle 3D symbols with symbolLayers
+              if (symbol.symbolLayers && symbol.symbolLayers.length > 0) {
+                const symbolLayer = symbol.symbolLayers;
+                console.log("symbolLayer.items[0].type", symbolLayer.items[0].type);
+                console.log("symbolLayer.items[0].material", symbolLayer.items[0].material);
+                console.log("symbolLayer.items[0].material.color", symbolLayer.items[0].material.color);
+                if (symbolLayer.items[0].material && symbolLayer.items[0].material.color) {
+                  return symbolLayer.items[0].material.color;
+                }
+                // Fallback for line symbols
+                if (symbolLayer.items[0].material.color) {
+                  return symbolLayer.items[0].material.color;
+                }
+              }
+              // Handle 2D symbols
+              if (symbolLayer.items[0].material.color) {
+                return symbolLayer.items[0].material.color;
+              }
+            } catch (e) {
+              console.warn("Could not extract color from symbol:", e);
+            }
+            return null;
+          }
+          
+          // Cache layer colors
+          function cacheLayerColors() {
+            webscene.layers.forEach(layer => {
+              try {
+                if (layer.renderer && layer.renderer.uniqueValueInfos) {
+                  const colorMap = new Map();
+                  
+                  layer.renderer.uniqueValueInfos.forEach(info => {
+                    const color = getColorFromSymbol(info.symbol);
+                    if (color) {
+                      colorMap.set(info.value, `rgba(${color.slice(0, 3).join(',')},1)`);
+                    }
+                  });
+                  
+                  if (colorMap.size > 0) {
+                    layerColors.set(layer.id, colorMap);
+                  }
+                }
+              } catch (e) {
+                console.warn(`Error processing layer ${layer.id}:`, e);
+              }
+            });
+          }
+          
+          cacheLayerColors();
+          
+          // Add color indicators to combobox items
+          function enhanceComboboxItems() {
+            try {
+              const comboboxItems = document.querySelectorAll('.esri-editor .calcite-combobox-item');
+              
+              comboboxItems.forEach(item => {
+                if (item.dataset.colorEnhanced) return;
+                
+                const value = item.getAttribute('text-label') || item.textContent.trim();
+                if (!value) return;
+                
+                const activeLayer = editor.viewModel.activeLayer;
+                if (!activeLayer || !layerColors.has(activeLayer.id)) return;
+                
+                const color = layerColors.get(activeLayer.id).get(value);
+                if (color) {
+                  const colorIndicator = document.createElement('span');
+                  colorIndicator.className = 'color-indicator';
+                  colorIndicator.style.backgroundColor = color;
+                  
+                  const labelElement = item.querySelector('.title') || 
+                                     item.querySelector('.label') || 
+                                     item.querySelector('.center-content div');
+                  if (labelElement) {
+                    labelElement.prepend(colorIndicator);
+                    item.dataset.colorEnhanced = 'true';
+                  }
+                }
+              });
+            } catch (e) {
+              console.warn("Error enhancing combobox items:", e);
+            }
+          }
+          
+          // Watch for editor state changes
+          reactiveUtils.watch(
+            () => editor.viewModel.state,
+            (state) => {
+              if (state === "ready") {
+                const editorContainer = document.querySelector('.esri-editor');
+                if (editorContainer) {
+                  const observer = new MutationObserver(() => {
+                    enhanceComboboxItems();
+                  });
+                  
+                  observer.observe(editorContainer, {
+                    childList: true,
+                    subtree: true
+                  });
+                  
+                  enhanceComboboxItems();
+                  
+                  reactiveUtils.watch(
+                    () => editor.viewModel.state,
+                    (newState) => {
+                      if (newState !== "ready") {
+                        observer.disconnect();
+                      }
+                    }
+                  );
+                }
+              }
+            }
+          );
+          
+          // Watch for attribute updates
+          reactiveUtils.watch(
+            () => editor.viewModel.activeWorkflow,
+            (workflow) => {
+              if (workflow && (workflow.type === "update" || workflow.type === "create")) {
+                promiseUtils.debounce(enhanceComboboxItems, 100)();
+              }
+            }
+          );
+        });
+      });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

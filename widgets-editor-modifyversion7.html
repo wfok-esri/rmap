@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Edit features with the Editor widget | Sample | ArcGIS Maps SDK for JavaScript 4.32</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    
+    /* Style for full background color combobox items */
+    .esri-editor .calcite-combobox-item {
+      padding: 4px 8px;
+      transition: background-color 0.2s ease;
+    }
+    
+    /* Ensure text is readable on colored backgrounds */
+    .esri-editor .calcite-combobox-item .title,
+    .esri-editor .calcite-combobox-item .label {
+      position: relative;
+      color: white;
+      text-shadow: 0 0 2px rgba(0,0,0,0.7);
+    }
+    
+    /* Hover state */
+    .esri-editor .calcite-combobox-item:hover {
+      filter: brightness(1.1);
+    }
+    
+    /* Selected item style */
+    .esri-editor .calcite-combobox-item[selected] {
+      outline: 2px solid #0079c1;
+    }
+  </style>
+
+  <script>
+    require([
+        "esri/WebScene",
+        "esri/views/SceneView",
+        "esri/widgets/Editor",
+        "esri/core/reactiveUtils",
+        "esri/core/promiseUtils"
+      ], (
+        WebScene, SceneView,
+        Editor,
+        reactiveUtils,
+        promiseUtils
+      ) => {
+
+        const webscene = new WebScene({
+          portalItem: {
+            id: "c9762a2985104d74a12550a72a9858bf",
+            portal: {
+              url: "https://rmaplite-map-uat.hkphub.com/arcgis_portal",
+              authMode: "auto"
+            }
+          }          
+        });
+
+        const view = new SceneView({
+          container: "viewDiv",
+          map: webscene
+        });
+
+        view.when(() => {
+          const editor = new Editor({
+            view: view
+          });
+
+          view.ui.add(editor, "top-right");
+          
+          // Store color information by layer and type
+          const layerColors = new Map();
+          
+          // Safe color extraction from symbol
+          function getColorFromSymbol(symbol) {
+            try {
+              // Handle 3D symbols with symbolLayers
+              if (symbol.symbolLayers && symbol.symbolLayers.items) {
+                const symbolLayer = symbol.symbolLayers.items[0];
+                if (symbolLayer.material && symbolLayer.material.color) {
+                  return symbolLayer.material.color;
+                }
+                // Fallback for line symbols
+                if (symbolLayer.color) {
+                  return symbolLayer.color;
+                }
+              }
+              // Handle 2D symbols
+              if (symbol.color) {
+                return symbol.color;
+              }
+            } catch (e) {
+              console.warn("Could not extract color from symbol:", e);
+            }
+            return null;
+          }
+          
+          // Convert color object to rgba string
+          function colorToRgba(color) {
+            if (!color) return null;
+            
+            // If color is already a string (like "rgba(255,0,0,1)")
+            if (typeof color === 'string') return color;
+            
+            // If color is an object with r,g,b,a properties (ESRI Color object)
+            if (color.r !== undefined && color.g !== undefined && color.b !== undefined) {
+              const a = color.a !== undefined ? color.a : 1;
+              return `rgba(${Math.round(color.r)},${Math.round(color.g)},${Math.round(color.b)},${a})`;
+            }
+            
+            // If color is an array [r,g,b] or [r,g,b,a]
+            if (Array.isArray(color)) {
+              const r = color[0] || 0;
+              const g = color[1] || 0;
+              const b = color[2] || 0;
+              const a = color[3] !== undefined ? color[3] : 1;
+              return `rgba(${r},${g},${b},${a})`;
+            }
+            
+            return null;
+          }
+          
+          // Calculate text color based on background brightness
+          function getTextColor(bgColor) {
+            const rgb = bgColor.match(/\d+/g);
+            if (rgb && rgb.length >= 3) {
+              const brightness = (parseInt(rgb[0]) * 299 +
+                                (parseInt(rgb[1]) * 587 +
+                                (parseInt(rgb[2]) * 114) / 1000;
+              return brightness > 125 ? '#000000' : '#ffffff';
+            }
+            return '#ffffff';
+          }
+          
+          // Cache layer colors
+          function cacheLayerColors() {
+            webscene.layers.forEach(layer => {
+              try {
+                if (layer.renderer && layer.renderer.uniqueValueInfos) {
+                  const colorMap = new Map();
+                  
+                  layer.renderer.uniqueValueInfos.forEach(info => {
+                    const color = getColorFromSymbol(info.symbol);
+                    const rgbaColor = colorToRgba(color);
+                    if (rgbaColor) {
+                      colorMap.set(info.value, {
+                        bgColor: rgbaColor,
+                        textColor: getTextColor(rgbaColor)
+                      });
+                    }
+                  });
+                  
+                  if (colorMap.size > 0) {
+                    layerColors.set(layer.id, colorMap);
+                  }
+                }
+              } catch (e) {
+                console.warn(`Error processing layer ${layer.id}:`, e);
+              }
+            });
+          }
+          
+          cacheLayerColors();
+          
+          // Apply background colors to combobox items
+          function colorizeComboboxItems() {
+            try {
+              const comboboxItems = document.querySelectorAll('.esri-editor .calcite-combobox-item');
+              
+              comboboxItems.forEach(item => {
+                if (item.dataset.colorized) return;
+                
+                const value = item.getAttribute('text-label') || item.textContent.trim();
+                if (!value) return;
+                
+                const activeLayer = editor.viewModel.activeLayer;
+                if (!activeLayer || !layerColors.has(activeLayer.id)) return;
+                
+                const colorInfo = layerColors.get(activeLayer.id).get(value);
+                if (colorInfo) {
+                  // Apply background color
+                  item.style.backgroundColor = colorInfo.bgColor;
+                  
+                  // Find and style the text element
+                  const labelElement = item.querySelector('.title') || 
+                                     item.querySelector('.label') || 
+                                     item.querySelector('.center-content div');
+                  if (labelElement) {
+                    labelElement.style.color = colorInfo.textColor;
+                    if (colorInfo.textColor === '#ffffff') {
+                      labelElement.style.textShadow = '0 0 2px rgba(0,0,0,0.7)';
+                    } else {
+                      labelElement.style.textShadow = 'none';
+                    }
+                  }
+                  
+                  item.dataset.colorized = 'true';
+                }
+              });
+            } catch (e) {
+              console.warn("Error colorizing combobox items:", e);
+            }
+          }
+          
+          // Watch for editor state changes
+          reactiveUtils.watch(
+            () => editor.viewModel.state,
+            (state) => {
+              if (state === "ready") {
+                const editorContainer = document.querySelector('.esri-editor');
+                if (editorContainer) {
+                  const observer = new MutationObserver(colorizeComboboxItems);
+                  observer.observe(editorContainer, {
+                    childList: true,
+                    subtree: true
+                  });
+                  
+                  colorizeComboboxItems();
+                  
+                  reactiveUtils.watch(
+                    () => editor.viewModel.state,
+                    (newState) => {
+                      if (newState !== "ready") {
+                        observer.disconnect();
+                      }
+                    }
+                  );
+                }
+              }
+            }
+          );
+          
+          // Watch for attribute updates
+          reactiveUtils.watch(
+            () => editor.viewModel.activeWorkflow,
+            (workflow) => {
+              if (workflow && (workflow.type === "update" || workflow.type === "create")) {
+                promiseUtils.debounce(colorizeComboboxItems, 100)();
+              }
+            }
+          );
+        });
+      });
+  </script>
+</head>
+<body>
+  <div id="viewDiv"></div>
+</body>
+</html>

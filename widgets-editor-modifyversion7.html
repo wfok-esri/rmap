@@ -57,6 +57,7 @@
         promiseUtils
       ) => {
 
+        console.log("Initializing application...");
         const webscene = new WebScene({
           portalItem: {
             id: "c9762a2985104d74a12550a72a9858bf",
@@ -73,6 +74,7 @@
         });
 
         view.when(() => {
+          console.log("SceneView ready, initializing Editor...");
           const editor = new Editor({
             view: view
           });
@@ -84,39 +86,65 @@
           
           // Safe color extraction from symbol
           function getColorFromSymbol(symbol) {
+            console.group("Extracting color from symbol");
+            console.log("Symbol object:", symbol);
             try {
               // Handle 3D symbols with symbolLayers
               if (symbol.symbolLayers && symbol.symbolLayers.items) {
+                console.log("Symbol has symbolLayers.items");
                 const symbolLayer = symbol.symbolLayers.items[0];
+                console.log("First symbolLayer:", symbolLayer);
+                console.log("symbolLayer.type:", symbolLayer.type);
+                console.log("symbolLayer.material:", symbolLayer.material);
+                
                 if (symbolLayer.material && symbolLayer.material.color) {
+                  console.log("Using material.color:", symbolLayer.material.color);
                   return symbolLayer.material.color;
                 }
                 // Fallback for line symbols
                 if (symbolLayer.color) {
+                  console.log("Using symbolLayer.color:", symbolLayer.color);
                   return symbolLayer.color;
                 }
               }
               // Handle 2D symbols
               if (symbol.color) {
+                console.log("Using symbol.color:", symbol.color);
                 return symbol.color;
               }
             } catch (e) {
               console.warn("Could not extract color from symbol:", e);
+            } finally {
+              console.groupEnd();
             }
+            console.log("No color found in symbol");
             return null;
           }
           
           // Convert color object to rgba string
           function colorToRgba(color) {
-            if (!color) return null;
+            console.group("Converting color to rgba");
+            console.log("Input color:", color);
+            if (!color) {
+              console.log("No color provided");
+              console.groupEnd();
+              return null;
+            }
             
             // If color is already a string (like "rgba(255,0,0,1)")
-            if (typeof color === 'string') return color;
+            if (typeof color === 'string') {
+              console.log("Color is already a string:", color);
+              console.groupEnd();
+              return color;
+            }
             
             // If color is an object with r,g,b,a properties (ESRI Color object)
             if (color.r !== undefined && color.g !== undefined && color.b !== undefined) {
               const a = color.a !== undefined ? color.a : 1;
-              return `rgba(${Math.round(color.r)},${Math.round(color.g)},${Math.round(color.b)},${a})`;
+              const rgba = `rgba(${Math.round(color.r)},${Math.round(color.g)},${Math.round(color.b)},${a})`;
+              console.log("Converted from Color object to:", rgba);
+              console.groupEnd();
+              return rgba;
             }
             
             // If color is an array [r,g,b] or [r,g,b,a]
@@ -125,117 +153,188 @@
               const g = color[1] || 0;
               const b = color[2] || 0;
               const a = color[3] !== undefined ? color[3] : 1;
-              return `rgba(${r},${g},${b},${a})`;
+              const rgba = `rgba(${r},${g},${b},${a})`;
+              console.log("Converted from array to:", rgba);
+              console.groupEnd();
+              return rgba;
             }
             
+            console.log("Unrecognized color format");
+            console.groupEnd();
             return null;
           }
           
           // Calculate text color based on background brightness
           function getTextColor(bgColor) {
+            console.group("Calculating text color for:", bgColor);
             const rgb = bgColor.match(/\d+/g);
             if (rgb && rgb.length >= 3) {
-              const brightness = (parseInt(rgb[0]) * 299 +
-                                parseInt(rgb[1]) * 587 +
-                                parseInt(rgb[2]) * 114) / 1000;
-              return brightness > 125 ? '#000000' : '#ffffff';
+              const brightness = (parseInt(rgb[0]) * 299 + 
+                                parseInt(rgb[1]) * 587 + 
+                                parseInt(rgb[2]) * 114);
+              const normalizedBrightness = brightness / 1000;
+              console.log(`Calculated brightness: ${normalizedBrightness} (RGB: ${rgb[0]},${rgb[1]},${rgb[2]})`);
+              const textColor = normalizedBrightness > 125 ? '#000000' : '#ffffff';
+              console.log("Using text color:", textColor);
+              console.groupEnd();
+              return textColor;
             }
+            console.log("Couldn't parse RGB values, using white text");
+            console.groupEnd();
             return '#ffffff';
           }
           
           // Cache layer colors
           function cacheLayerColors() {
+            console.group("Caching layer colors");
             webscene.layers.forEach(layer => {
+              console.group(`Processing layer ${layer.id}`);
               try {
                 if (layer.renderer && layer.renderer.uniqueValueInfos) {
+                  console.log("Layer has uniqueValueInfos");
                   const colorMap = new Map();
                   
                   layer.renderer.uniqueValueInfos.forEach(info => {
+                    console.group(`Processing value ${info.value}`);
+                    console.log("Symbol type:", info.symbol.type);
                     const color = getColorFromSymbol(info.symbol);
+                    console.log("Extracted color:", color);
                     const rgbaColor = colorToRgba(color);
+                    console.log("RGBA color:", rgbaColor);
+                    
                     if (rgbaColor) {
                       colorMap.set(info.value, {
                         bgColor: rgbaColor,
                         textColor: getTextColor(rgbaColor)
                       });
+                      console.log(`Cached color for value ${info.value}:`, rgbaColor);
+                    } else {
+                      console.log("No valid color for this value");
                     }
+                    console.groupEnd();
                   });
                   
                   if (colorMap.size > 0) {
                     layerColors.set(layer.id, colorMap);
+                    console.log(`Cached ${colorMap.size} colors for layer ${layer.id}`);
+                  } else {
+                    console.log("No colors cached for this layer");
                   }
+                } else {
+                  console.log("Layer has no renderer or uniqueValueInfos");
                 }
               } catch (e) {
                 console.warn(`Error processing layer ${layer.id}:`, e);
               }
+              console.groupEnd();
             });
+            console.groupEnd();
           }
           
           cacheLayerColors();
           
           // Apply background colors to combobox items
           function colorizeComboboxItems() {
+            console.group("Colorizing combobox items");
             try {
               const comboboxItems = document.querySelectorAll('.esri-editor .calcite-combobox-item');
+              console.log(`Found ${comboboxItems.length} combobox items`);
               
-              comboboxItems.forEach(item => {
-                if (item.dataset.colorized) return;
+              comboboxItems.forEach((item, index) => {
+                console.group(`Item ${index + 1}/${comboboxItems.length}`);
+                if (item.dataset.colorized) {
+                  console.log("Item already colorized, skipping");
+                  console.groupEnd();
+                  return;
+                }
                 
                 const value = item.getAttribute('text-label') || item.textContent.trim();
-                if (!value) return;
+                console.log("Item value:", value);
+                if (!value) {
+                  console.log("No value found, skipping");
+                  console.groupEnd();
+                  return;
+                }
                 
                 const activeLayer = editor.viewModel.activeLayer;
-                if (!activeLayer || !layerColors.has(activeLayer.id)) return;
+                console.log("Active layer:", activeLayer ? activeLayer.id : "none");
+                
+                if (!activeLayer || !layerColors.has(activeLayer.id)) {
+                  console.log("No active layer or no colors cached for layer");
+                  console.groupEnd();
+                  return;
+                }
                 
                 const colorInfo = layerColors.get(activeLayer.id).get(value);
+                console.log("Color info for value:", colorInfo);
+                
                 if (colorInfo) {
-                  // Apply background color
+                  console.log("Applying background color:", colorInfo.bgColor);
                   item.style.backgroundColor = colorInfo.bgColor;
                   
-                  // Find and style the text element
                   const labelElement = item.querySelector('.title') || 
                                      item.querySelector('.label') || 
                                      item.querySelector('.center-content div');
                   if (labelElement) {
+                    console.log("Applying text color:", colorInfo.textColor);
                     labelElement.style.color = colorInfo.textColor;
                     if (colorInfo.textColor === '#ffffff') {
                       labelElement.style.textShadow = '0 0 2px rgba(0,0,0,0.7)';
                     } else {
                       labelElement.style.textShadow = 'none';
                     }
+                  } else {
+                    console.log("No label element found");
                   }
                   
                   item.dataset.colorized = 'true';
+                  console.log("Item colorized successfully");
+                } else {
+                  console.log("No color info found for this value");
                 }
+                console.groupEnd();
               });
             } catch (e) {
               console.warn("Error colorizing combobox items:", e);
             }
+            console.groupEnd();
           }
           
           // Watch for editor state changes
           reactiveUtils.watch(
             () => editor.viewModel.state,
             (state) => {
+              console.log("Editor state changed to:", state);
               if (state === "ready") {
+                console.log("Editor ready, setting up observers...");
                 const editorContainer = document.querySelector('.esri-editor');
                 if (editorContainer) {
-                  const observer = new MutationObserver(colorizeComboboxItems);
+                  const observer = new MutationObserver((mutations) => {
+                    console.log("DOM mutation observed, colorizing items...");
+                    console.log("Mutations:", mutations);
+                    colorizeComboboxItems();
+                  });
+                  
                   observer.observe(editorContainer, {
                     childList: true,
                     subtree: true
                   });
                   
+                  console.log("Initial colorization...");
                   colorizeComboboxItems();
                   
                   reactiveUtils.watch(
                     () => editor.viewModel.state,
                     (newState) => {
+                      console.log("Editor state changed to:", newState);
                       if (newState !== "ready") {
+                        console.log("Disconnecting observer...");
                         observer.disconnect();
                       }
                     }
                   );
+                } else {
+                  console.warn("Editor container not found");
                 }
               }
             }
@@ -245,8 +344,13 @@
           reactiveUtils.watch(
             () => editor.viewModel.activeWorkflow,
             (workflow) => {
+              console.log("Workflow changed:", workflow ? workflow.type : "none");
               if (workflow && (workflow.type === "update" || workflow.type === "create")) {
-                promiseUtils.debounce(colorizeComboboxItems, 100)();
+                console.log("Debouncing colorization...");
+                promiseUtils.debounce(() => {
+                  console.log("Executing debounced colorization...");
+                  colorizeComboboxItems();
+                }, 100)();
               }
             }
           );

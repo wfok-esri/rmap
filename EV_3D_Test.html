@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html style="background: #252525; font-family: 'Avenir Next', sans-serif;">
+<head>
+    <style>
+        .filter-group { margin: 10px 0; }
+        .toggle-btn {
+            background: #3d4d66;
+            color: #c4ff91;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            margin: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .toggle-btn.active, .toggle-btn:hover {
+            background: #c4ff91;
+            color: #252525;
+        }
+        .select-all { font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body style="padding: 10px; color: white;">
+
+    <!-- 模拟您的"Select All"组 -->
+    <div class="filter-group">
+        <button id="selectAllBtn" class="toggle-btn select-all">Select All</button>
+        <div id="filterToggles">
+            <!-- 1. Private Car -->
+            <button 
+                class="toggle-btn" 
+                data-field="private_car" 
+                data-widget-id="widget_153"
+            >Private Car</button>
+
+            <!-- 2. Taxi -->
+            <button 
+                class="toggle-btn" 
+                data-field="taxi" 
+                data-widget-id="widget_158"
+            >Taxi</button>
+
+            <!-- 3. Fast Charger Incentive Scheme -->
+            <button 
+                class="toggle-btn" 
+                data-field="fast_charger" 
+                data-widget-id="widget_424"
+            >Fast Charger Incentive Scheme</button>
+        </div>
+    </div>
+
+    <script>
+        // 映射您的过滤器字段到Experience Builder的Widget ID
+        const filterMap = {
+            'private_car': 'widget_153',
+            'taxi': 'widget_158',
+            'fast_charger': 'widget_424'
+        };
+
+        // 1. Select All 控制逻辑
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const toggles = document.querySelectorAll('#filterToggles .toggle-btn');
+
+        selectAllBtn.addEventListener('click', (e) => {
+            const isActive = !e.target.classList.contains('active');
+            toggles.forEach(btn => {
+                btn.classList.toggle('active', isActive);
+                triggerFilter(btn.dataset.widgetId, isActive);
+            });
+            selectAllBtn.classList.toggle('active', isActive);
+        });
+
+        // 2. 单个过滤器同步Select All
+        toggles.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const allActive = [...toggles].every(btn => 
+                    btn.classList.contains('active')
+                );
+                selectAllBtn.classList.toggle('active', allActive);
+                triggerFilter(btn.dataset.widgetId, e.target.classList.contains('active'));
+            });
+        });
+
+        // 3. 模拟Experience Builder过滤器触发（关键！）
+        function triggerFilter(widgetId, isActive) {
+            const filterExpr = isActive 
+                ? `${widgetId}_sql=LOWER(${filterMap[widgetId]})%20%3D%20'1'` 
+                : `${widgetId}_sql=`;
+            
+            // 发送自定义事件到父页面（Experience Builder）
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage(
+                    {
+                        type: 'arcgisFilterUpdate',
+                        widgetId: widgetId,
+                        sqlExpression: filterExpr
+                    },
+                    '*'
+                );
+            }
+        }
+
+        // 4. 初始化状态（根据原应用默认值）
+        // 您的原应用默认全部关闭，因此Select All初始为非激活状态
+    </script>
+</body>
+</html>

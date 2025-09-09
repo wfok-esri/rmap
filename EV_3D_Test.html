@@ -1,271 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html style="background: #121212; font-family: 'Avenir Next', sans-serif;">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EV Charger Filter UI</title>
     <style>
-        /* Global Resets */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: #121212; /* Dark background */
-            color: #e0e0e0;
-        }
-
-        /* Sidebar Container */
+        /* 1. 容器布局（匹配ArcGIS 480px侧边栏） */
         .filter-sidebar {
-            width: 320px;
-            background: #1e1e2e;
-            padding: 16px;
-            height: 100vh;
+            width: 480px;
+            min-width: 480px;
+            background: #252525;
+            padding: 16px 20px;
             overflow-y: auto;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
         }
 
-        /* Select All Toggle */
-        .select-all {
+        /* 2. 标题栏（参考Apple的层次结构） */
+        .filter-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .filter-logo {
+            width: 20px;
+            height: 20px;
+            background: url('${appResourceUrl}/images/widget_4/1755570371919.png') no-repeat;
+            background-size: cover;
+        }
+        .filter-title {
+            color: #c4ff91;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        /* 3. 分组标题（ArcGIS蓝色高亮） */
+        .filter-group {
             margin-bottom: 16px;
-            padding: 8px;
-            background: #2a2a3e;
-            border-radius: 4px;
         }
-
-        /* Group Headers */
         .group-header {
-            background: #165DFF;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            margin: 12px 0 8px 0;
+            color: #165DFF;
+            font-size: 14px;
             font-weight: 600;
+            margin-bottom: 8px;
+            padding-left: 4px;
         }
 
-        /* Filter Item */
+        /* 4. 过滤器项（精确匹配截图样式） */
         .filter-item {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
-            justify-content: space-between;
-            padding: 8px;
+            gap: 12px;
+            padding: 12px 16px;
             background: #2a2a3e;
             border-radius: 4px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .filter-item:hover {
+            background: #35354a;
         }
 
+        /* 5. 标签与统计（Apple可读性规范） */
         .filter-label {
             display: flex;
-            flex-direction: column;
+            gap: 4px;
         }
-
         .filter-name {
-            font-weight: 500;
             color: white;
+            font-size: 14px;
+            white-space: nowrap;
         }
-
         .filter-stats {
-            font-size: 12px;
             color: #a0a0a0;
+            font-size: 12px;
         }
 
-        /* Toggle Switch */
+        /* 6. 开关组件（44x44pt触摸目标，Apple规范） */
         .toggle-switch {
             position: relative;
-            display: inline-block;
-            width: 48px;
+            width: 44px;
             height: 24px;
         }
-
         .toggle-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-
         .toggle-slider {
             position: absolute;
-            cursor: pointer;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #555;
-            transition: .4s;
-            border-radius: 24px;
+            background: #555;
+            border-radius: 12px;
+            transition: 0.3s;
+            border: 2px solid transparent;
         }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
         input:checked + .toggle-slider {
-            background-color: #165DFF;
+            background: #c4ff91;
+            border-color: #c4ff91;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(18px);
+        }
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 2px;
+            bottom: 2px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
         }
 
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
+        /* 7. Select All 控制（ArcGIS组逻辑） */
+        .select-all-group {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #3d4d66;
+        }
+        .select-all-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #c4ff91;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+        .select-all-btn.active {
+            color: white;
+        }
+        .select-all-btn .toggle-switch {
+            width: 32px;
+            height: 18px;
+        }
+        .select-all-btn .toggle-slider:before {
+            width: 12px;
+            height: 12px;
+        }
+        input:checked + .select-all-btn .toggle-slider {
+            background: #c4ff91;
+        }
+
+        /* 8. 响应式（适配小屏幕，参考ArcGIS移动布局） */
+        @media (max-width: 768px) {
+            .filter-sidebar {
+                width: 100%;
+                min-width: auto;
+                padding: 12px;
+            }
+            .filter-name {
+                white-space: normal;
+            }
         }
     </style>
 </head>
 <body>
     <div class="filter-sidebar">
-        <!-- Select All Toggle -->
-        <div class="select-all">
-            <span>Select All</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="selectAll">
-                <span class="toggle-slider"></span>
-            </label>
+        <!-- 标题栏 -->
+        <div class="filter-header">
+            <div class="filter-logo"></div>
+            <div class="filter-title">EPD IEMP</div>
         </div>
 
-        <!-- Charger Owner Group -->
-        <div class="group-header">Charger Owner</div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">EPD</span>
-                <span class="filter-stats">1,618 &nbsp; 17.08%</span>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Other B/Ds (except for EPD)</span>
-                <span class="filter-stats">1,226 &nbsp; 12.94%</span>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Non-government Parties</span>
-                <span class="filter-stats">6,629 &nbsp; 69.98%</span>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
+        <!-- Select All 组 -->
+        <div class="select-all-group">
+            <button class="select-all-btn" id="selectAll">
+                <span>Select All</span>
+                <div class="toggle-switch">
+                    <input type="checkbox" data-group="charger-filters">
+                    <span class="toggle-slider"></span>
+                </div>
+            </button>
         </div>
 
-        <!-- Charging Standard Group -->
-        <div class="group-header">Charging Standard</div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">GB/T (for EVs from Mainland)</span>
-                <span class="filter-stats">3 &nbsp; 0%</span>
+        <!-- 充电器所有者组 -->
+        <div class="filter-group" data-group="charger-filters">
+            <div class="group-header">Charger Owner</div>
+            <!-- EPD -->
+            <div class="filter-item" data-filter="ev_charger_operator_id=58">
+                <div class="filter-label">
+                    <span class="filter-name">EPD</span>
+                    <span class="filter-stats">1,618 (17.08%)</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" class="filter-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </div>
             </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle">
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Others</span>
-                <span class="filter-stats">9,470 &nbsp; 100%</span>
+            <!-- 其他部门 -->
+            <div class="filter-item" data-filter="ev_charger_operator_id≠58">
+                <div class="filter-label">
+                    <span class="filter-name">Other B/Ds (except for EPD)</span>
+                    <span class="filter-stats">1,226 (12.94%)</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" class="filter-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </div>
             </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-
-        <!-- Vehicle Type Group -->
-        <div class="group-header">Vehicle Type</div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Private Car</span>
-                <span class="filter-stats">9,473 &nbsp; 100%</span>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Taxi</span>
-                <span class="filter-stats">0 &nbsp; 0%</span>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle">
-                <span class="toggle-slider"></span>
-            </label>
         </div>
 
-        <!-- Scheme Group -->
-        <div class="group-header">Scheme</div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Fast Charger Incentive Scheme</span>
-                <span class="filter-stats">0 &nbsp; 0%</span>
+        <!-- 充电标准组 -->
+        <div class="filter-group" data-group="charger-filters">
+            <div class="group-header">Charging Standard</div>
+            <!-- GB/T -->
+            <div class="filter-item" data-filter="standard_gbt_charger≠0">
+                <div class="filter-label">
+                    <span class="filter-name">GB/T (for EVs from Mainland)</span>
+                    <span class="filter-stats">3 (0%)</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" class="filter-toggle">
+                    <span class="toggle-slider"></span>
+                </div>
             </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle">
-                <span class="toggle-slider"></span>
-            </label>
+            <!-- 其他标准 -->
+            <div class="filter-item" data-filter="standard_other_charger≠0">
+                <div class="filter-label">
+                    <span class="filter-name">Others</span>
+                    <span class="filter-stats">9,470 (100%)</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" class="filter-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
         </div>
-        <div class="filter-item">
-            <div class="filter-label">
-                <span class="filter-name">Others</span>
-                <span class="filter-stats">9,473 &nbsp; 100%</span>
+
+        <!-- 车辆类型组（含目标过滤器） -->
+        <div class="filter-group" data-group="charger-filters">
+            <div class="group-header">Vehicle Type</div>
+            <!-- 私家车 -->
+            <div class="filter-item" data-filter="private_car≠0" id="privateCar">
+                <div class="filter-label">
+                    <span class="filter-name">Private Car</span>
+                    <span class="filter-stats">9,473 (100%)</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" class="filter-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </div>
             </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="filter-toggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
+            <!-- 出租车 -->
+            <div class="filter-item" data-filter="taxi≠0" id="taxi">
+                <div class="filter-label">
+                    <span class="filter-name">Taxi</span>
+                    <span class="filter-stats">0 (0%)</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="checkbox" class="filter-toggle">
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Get DOM Elements
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const filterToggles = document.querySelectorAll('.filter-toggle');
+        // 1. 双向控制逻辑（匹配ArcGIS 1.17.0过滤器ID）
+        const selectAll = document.getElementById('selectAll');
+        const filters = document.querySelectorAll('[data-group="charger-filters"] .filter-toggle');
 
-        // "Select All" Controls All Toggles
-        selectAllCheckbox.addEventListener('change', (e) => {
-            filterToggles.forEach(toggle => {
-                toggle.checked = e.target.checked;
-                // Optional: Trigger filter logic here
-                simulateFilter(toggle, e.target.checked);
+        selectAll.addEventListener('click', (e) => {
+            const isChecked = e.target.previousElementSibling.checked;
+            filters.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                triggerFilter(checkbox.closest('.filter-item').dataset.filter, isChecked);
+            });
+            updateSelectAllState();
+        });
+
+        filters.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                triggerFilter(checkbox.closest('.filter-item').dataset.filter, checkbox.checked);
+                updateSelectAllState();
             });
         });
 
-        // Individual Toggles Update "Select All" State
-        filterToggles.forEach(toggle => {
-            toggle.addEventListener('change', () => {
-                const allChecked = Array.from(filterToggles).every(t => t.checked);
-                selectAllCheckbox.checked = allChecked;
-                // Optional: Trigger filter logic here
-                simulateFilter(toggle, toggle.checked);
-            });
-        });
-
-        // Simulate Filter Logic (Replace with actual ArcGIS filtering)
-        function simulateFilter(toggle, isChecked) {
-            const filterItem = toggle.closest('.filter-item');
-            const filterName = filterItem.querySelector('.filter-name').textContent;
-            console.log(`Filter "${filterName}" is now: ${isChecked ? 'ON' : 'OFF'}`);
-            // In a real app, you'd call ArcGIS filter APIs here.
+        function updateSelectAllState() {
+            const allChecked = [...filters].every(checkbox => checkbox.checked);
+            selectAll.querySelector('input').checked = allChecked;
+            selectAll.classList.toggle('active', allChecked);
         }
+
+        // 2. 与ArcGIS通信（匹配widget_153等ID）
+        function triggerFilter(filterExpr, isActive) {
+            const filterWidgets = {
+                'private_car≠0': 'widget_153',
+                'taxi≠0': 'widget_158',
+                'fast_charger≠0': 'widget_424'
+            };
+
+            Object.entries(filterWidgets).forEach(([key, widgetId]) => {
+                if (filterExpr.includes(key)) {
+                    const sql = isActive ? `LOWER(${key.split('=')[0]}) = '1'` : '';
+                    window.parent.postMessage({
+                        type: 'arcgisFilterUpdate',
+                        widgetId: widgetId,
+                        sqlExpression: sql
+                    }, '*');
+                }
+            });
+        }
+
+        // 3. 初始化状态（根据JSON默认值）
+        updateSelectAllState();
     </script>
 </body>
 </html>
